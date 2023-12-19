@@ -197,10 +197,9 @@ async def markov3(context: MessageContext, client: Client) -> MessageContext:
     return context
 
 
-@daily(at='8:00')
 @command(name='inspire', hidden=False)
 async def inspire(context: MessageContext, client: Client) -> MessageContext:
-    greeting = 'Miłego dnia i smacznej kawusi <3'
+    logger.info('Sending an inspiring message.')
     response = requests.get('https://inspirobot.me/api?generate=true')
     image = Image.open(requests.get(response.text, stream=True).raw)
     with io.BytesIO() as image_binary:
@@ -208,10 +207,18 @@ async def inspire(context: MessageContext, client: Client) -> MessageContext:
         image_binary.seek(0)
         channel = client.get_channel(getenv('INSPIRATIONAL_MESSAGE_CHANNEL_ID', as_=int))
         await channel.send(
-            greeting,
             file=discord.File(fp=image_binary, filename='daily_inspiration.png'),
         )
-    return context.updated(result=greeting)
+    return context
+
+
+@daily(at='8:00')
+@command(name='daily_inspiration', hidden=True)
+async def daily_inspiration(context: MessageContext, client: Client) -> MessageContext:
+    channel = client.get_channel(getenv('INSPIRATIONAL_MESSAGE_CHANNEL_ID', as_=int))
+    await channel.send('Miłego dnia i smacznej kawusi <3')
+    await inspire(context=context, client=client)  # type: ignore
+    return context
 
 
 @command(name='train_markov', hidden=True)

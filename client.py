@@ -4,7 +4,7 @@ import discord
 
 from command import Command
 from commands import COMMANDS
-from commands import inspire
+from commands import daily_inspiration
 from commands import markov2
 from commands import markov3
 from logger import get_logger
@@ -22,7 +22,7 @@ class Client(discord.Client):
         super().__init__()
         self.prefix = prefix
         self.scheduled_commands = [
-            inspire,
+            daily_inspiration,
         ]
         self.markov_blacklisted_channel_ids = [
             int(id)
@@ -72,5 +72,5 @@ class Client(discord.Client):
     async def scheduler(self) -> None:
         while True:
             for command in self.scheduled_commands:
-                await asyncio.create_task(command(message=None, client=self))
+                await asyncio.create_task(command(context=None, client=self))
             await asyncio.sleep(24 * 60 * 60)
