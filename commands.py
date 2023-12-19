@@ -23,6 +23,7 @@ from message_context import MessageContext
 from models import CommandModel
 from models import Markov2
 from models import Markov3
+from models import VariableModel
 from settings import DISCORD_MESSAGE_LIMIT
 from settings import MARKOV_MIN_WORD_COUNT
 from utils import Buf
@@ -407,5 +408,32 @@ async def show_command(context: MessageContext, client: Client) -> MessageContex
                 return context.updated(result=f'Command `{cmd_name}` is defined as: `{command.command}`')
             else:
                 return context.updated(result=f'Command `{cmd_name}` is not defined')
+    except Exception as e:
+        return context.updated(result=str(e))
+
+
+@command(name='set', hidden=False, special=True)
+async def set_variable(context: MessageContext, client: Client) -> MessageContext:
+    if len(context.command.args) < 2:
+        return context.updated(result=f'Usage: `{client.prefix}set <variable_name> <value>`')
+    try:
+        var_name, var_value = context.command.raw_args.split(' ', maxsplit=1)
+        with get_db() as db:
+            result = db.execute(
+                update(VariableModel)
+                .where(VariableModel.name == var_name)
+                .values(value=context.command.raw_args.split(' ', maxsplit=1)[1]),
+            )
+            db.commit()
+            if result.rowcount == 0:  # type: ignore
+                db.add(
+                    VariableModel(
+                        name=var_name,
+                        value=var_value,
+                    ),
+                )
+                db.commit()
+        return context.updated(result=f'Variable `{var_name}` set to {var_value}')
+
     except Exception as e:
         return context.updated(result=str(e))

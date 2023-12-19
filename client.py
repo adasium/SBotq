@@ -14,6 +14,7 @@ from database import get_db
 from logger import get_logger
 from message_context import MessageContext
 from models import CommandModel
+from models import VariableModel
 from settings import DEFAULT_PREFIX
 from utils import getenv
 from utils import is_special_command
@@ -54,7 +55,15 @@ class Client(discord.Client):
 
         if self.user.mentioned_in(message):
             if message.content == '<@!%s>' % self.user.id:
-                await message.channel.send(f'{message.author.mention} sup')
+                mention_msg = 'sup'
+                with get_db() as db:
+                    fetched_mention_msg = db.execute(
+                        select(VariableModel)
+                        .where(VariableModel.name == 'MENTION_GREETING'),
+                    ).scalar_one_or_none()
+                    if fetched_mention_msg is not None:
+                        mention_msg = fetched_mention_msg.value
+                await message.channel.send(f'{message.author.mention} {mention_msg}')
             else:
                 generated_markov = (await generate_markov2(current_context, self)).result
                 await message.channel.send(generated_markov)

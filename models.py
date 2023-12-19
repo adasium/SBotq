@@ -38,4 +38,12 @@ class Markov3(Base):
     word3: str | None = Column(String, nullable=True)
 
 
+class VariableModel(Base):
+    __tablename__ = 'variables'
+
+    id: int = Column(Integer, primary_key=True, unique=True)
+    name: str = Column(String, unique=True)
+    value: str = Column(String)
+
+
 Base.metadata.create_all(engine)
