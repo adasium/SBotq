@@ -4,6 +4,7 @@ import discord
 from sqlalchemy import select
 
 from command import Command
+from command import parse_commands
 from commands import COMMANDS
 from commands import daily_inspiration
 from commands import generate_markov2
@@ -18,7 +19,6 @@ from models import VariableModel
 from settings import DEFAULT_PREFIX
 from utils import getenv
 from utils import is_special_command
-from utils import parse_commands
 from utils import remove_prefix
 
 

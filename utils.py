@@ -7,13 +7,11 @@ from datetime import datetime
 from datetime import time
 from datetime import timedelta
 from typing import Any
-from typing import Awaitable
 from typing import Callable
 from typing import overload
 from typing import Type
 from typing import TypeVar
 
-from command import Command
 from models import Markov2
 from models import Markov3
 from settings import DEFAULT_PREFIX
@@ -56,11 +54,6 @@ def load_env_file(path: str = '.env') -> None:
 
 
 load_env_file()
-
-
-def parse_commands(message: str, prefix: str = DEFAULT_PREFIX) -> list[Command]:
-    parts = [p.strip() for p in message.split(' | ')]
-    return [Command.from_str(part) for part in parts]
 
 
 def time_difference(time1: time, time2: time) -> timedelta:
