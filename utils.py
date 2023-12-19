@@ -6,6 +6,9 @@ from typing import overload
 from typing import Type
 from typing import TypeVar
 
+from command import Command
+from settings import DEFAULT_PREFIX
+
 
 T = TypeVar('T')
 U = TypeVar('U')
@@ -33,3 +36,8 @@ def getenv(name: str, as_: Callable[[str], T] | Type[bool] | Type[str] = str) ->
         else:
             return True
     return as_(value)
+
+
+def parse_commands(message: str, prefix: str = DEFAULT_PREFIX) -> list[Command]:
+    parts = [p.strip() for p in message.split('|')]
+    return [Command.from_str(part) for part in parts]
