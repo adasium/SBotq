@@ -214,7 +214,7 @@ async def send_inspirational_message(context: MessageContext, client: Client) ->
     return context.updated(result=greeting)
 
 
-@command(name='train_markov')
+@command(name='train_markov', hidden=True)
 async def train_markov(context: MessageContext, client: Client) -> MessageContext:
     i = 1
     async for message in context.message.channel.history(limit=None):
