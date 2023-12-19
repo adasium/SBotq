@@ -44,14 +44,6 @@ async def commands(context: MessageContext, client: Client) -> MessageContext:
     return context.updated(result=result)
 
 
-@command(name='version')
-async def version(context: MessageContext, client: Client) -> MessageContext:
-    if random.random() < 0.5:
-        return context.updated(result='69')
-    else:
-        return context.updated(result='420')
-
-
 @command(name='random')
 async def random_(context: MessageContext, client: Client) -> MessageContext:
     try:
