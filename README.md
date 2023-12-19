@@ -15,6 +15,8 @@ specify in env variables or in .env file inside project root
 
 ## how to run
 
+works for python3.8 so newer versions should work too
+
 ```bash
 virtualenv -p python3.8 .venv
 source .venv/bin/activate
