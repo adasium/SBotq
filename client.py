@@ -68,6 +68,7 @@ class Client(discord.Client):
             else:
                 generated_markov = (await generate_markov2(current_context, self)).result
                 await message.channel.send(generated_markov)
+            return
 
         if not message.content.startswith(self.prefix) and message.channel.id not in self.markov_blacklisted_channel_ids:
             await markov2(current_context, self)
