@@ -25,10 +25,10 @@ def getenv(name: str, *, as_: Callable[[str], T]) -> T: ...
 
 
 def getenv(
-        name: str,
-        *,
-        as_: Callable[[str], T] | Type[bool] | Type[str] = str,
-        default: T | bool | str | None = None,
+    name: str,
+    *,
+    as_: Callable[[str], T] | Type[bool] | Type[str] = str,
+    default: T | bool | str | None = None,
 ) -> T | bool | str:
     if os.environ.get(name, _MISSING) == _MISSING and default is not None:
         return default

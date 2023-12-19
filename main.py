@@ -2,14 +2,14 @@ from client import Client
 from getenv import getenv
 
 
-def main():
+def main() -> None:
     client = Client()
-    client.run(
-        getenv('TOKEN'),
-    )
+    client.run(getenv('TOKEN'))
+    return 0
+
 
 if __name__ == '__main__':
     try:
-        main()
+        raise SystemExit(main())
     except KeyboardInterrupt:
         pass

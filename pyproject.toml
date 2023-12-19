@@ -3,7 +3,13 @@ mypy_path = 'stubs'
 
 [[tool.mypy.overrides]]
 module = [
-    "discord.*",
-    "PIL",
+    'discord.*',
+    'PIL',
 ]
 ignore_missing_imports = true
+
+[tool.pycodestyle]
+ignore = [
+    'D100',
+    'D103',
+]
