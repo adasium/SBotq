@@ -1,6 +1,5 @@
 [tool.mypy]
 mypy_path = 'stubs'
-plugins = "sqlalchemy.ext.mypy.plugin"
 
 [[tool.mypy.overrides]]
 module = [

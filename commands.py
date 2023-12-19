@@ -22,6 +22,7 @@ from sqlalchemy import or_
 from sqlalchemy import select
 from sqlalchemy import update
 
+from botka_script.expr import interpret
 from carrotson import CONTEXT_SIZE
 from carrotson import Path
 from carrotson import split_into_paths
@@ -587,3 +588,11 @@ async def suggest(context: MessageContext, client: Client) -> MessageContext:
     await context.message.add_reaction('⬆️')
     await context.message.add_reaction('⬇️')
     return context
+
+
+@command(name='yywrap', hidden=False, special=False)
+async def yywrap(context: MessageContext, client: Client) -> MessageContext:
+    logger.debug('yy > %s', context.command.raw_args)
+    result = interpret(context.command.raw_args)
+    logger.debug('yy > %s', result)
+    return context.updated(result=result)

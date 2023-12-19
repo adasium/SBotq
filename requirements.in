@@ -1,3 +1,4 @@
+attrs==21.2.0
 discord.py[voice]==2.2.3
 aiohttp==3.8.4
 pendulum==2.1.2
