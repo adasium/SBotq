@@ -497,3 +497,10 @@ async def next_bernardynki(context: MessageContext, client: Client) -> MessageCo
     bernardynki_fmt = next_bernardynki.strftime('%d-%m-%Y')
     days = next_bernardynki.diff(now).in_days()
     return context.updated(result=f'{bernardynki_fmt} (in {days} days)')
+
+
+@command(name='suggest', hidden=False, special=False)
+async def suggest(context: MessageContext, client: Client) -> MessageContext:
+    await context.message.add_reaction('⬆️')
+    await context.message.add_reaction('⬇️')
+    return context
