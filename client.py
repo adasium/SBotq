@@ -13,12 +13,12 @@ from commands import markov2
 from commands import markov3
 from commands import SPECIAL_COMMANDS
 from database import get_db
+from getenv import getenv
 from logger import get_logger
 from message_context import MessageContext
 from models import CommandModel
 from models import VariableModel
 from settings import DEFAULT_PREFIX
-from utils import getenv
 from utils import is_special_command
 from utils import remove_prefix
 

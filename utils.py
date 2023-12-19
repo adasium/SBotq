@@ -1,59 +1,16 @@
 from __future__ import annotations
 
 import itertools
-import os
 import random
 from datetime import datetime
 from datetime import time
 from datetime import timedelta
 from typing import Any
 from typing import Callable
-from typing import overload
-from typing import Type
-from typing import TypeVar
 
 from models import Markov2
 from models import Markov3
 from settings import DEFAULT_PREFIX
-from settings import ENV_FILE_COMMENT
-
-
-T = TypeVar('T')
-
-
-@overload
-def getenv(name: str) -> str: ...
-@overload
-def getenv(name: str, as_: Type[bool]) -> bool: ...
-@overload
-def getenv(name: str, as_: Type[str] = str) -> str: ...
-@overload
-def getenv(name: str, as_: Callable[[str], T]) -> T: ...
-
-
-def getenv(name: str, as_: Callable[[str], T] | Type[bool] | Type[str] = str) -> T | bool | str:
-    value = os.environ[name]
-    if isinstance(as_, type) and issubclass(as_, bool):
-        if value.lower() in ('false', ''):
-            return False
-        else:
-            return True
-    return as_(value)
-
-
-def load_env_file(path: str = '.env') -> None:
-    try:
-        with open(path) as f:
-            for line in f:
-                if line.startswith(ENV_FILE_COMMENT):
-                    continue
-                key, value = [item.strip() for item in line.split('=', maxsplit=1)]
-                os.environ[key] = value
-    except IOError as e:
-        print(e)
-
-
-load_env_file()
 
 
 def time_difference(time1: time, time2: time) -> timedelta:

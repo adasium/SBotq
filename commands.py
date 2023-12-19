@@ -23,6 +23,7 @@ from sqlalchemy import update
 from database import get_db
 from decorators import daily
 from exceptions import DiscordMessageMissingException
+from getenv import getenv
 from logger import get_logger
 from message_context import MessageContext
 from models import CommandModel
@@ -35,7 +36,6 @@ from settings import RANDOM_MARKOV_MESSAGE_CHANCE
 from settings import RANDOM_MARKOV_MESSAGE_COUNT
 from utils import Buf
 from utils import get_markov_weights
-from utils import getenv
 from utils import shuffle_str
 from utils import triggered_chance
 from utils import window

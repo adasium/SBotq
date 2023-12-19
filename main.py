@@ -1,5 +1,5 @@
 from client import Client
-from utils import getenv
+from getenv import getenv
 
 
 async def main():
