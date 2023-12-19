@@ -450,7 +450,7 @@ async def generate_markov_at_random_time(context: MessageContext, client: Client
     while True:
         await asyncio.sleep(1)
         if triggered_chance(RANDOM_MARKOV_MESSAGE_CHANCE):
-            markov_message = await asyncio.create_task(markov2(context=MessageContext.empty(), client=client))
+            markov_message = await markov2(context=MessageContext.empty(), client=client)
             await client.get_channel(
                 id=getenv('RANDOM_MARKOV_MESSAGE_CHANNEL_ID', as_=int),
-            ).send(markov_message)
+            ).send(markov_message.result)
