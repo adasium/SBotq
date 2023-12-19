@@ -448,7 +448,7 @@ async def set_variable(context: MessageContext, client: Client) -> MessageContex
 
 async def generate_markov_at_random_time(context: MessageContext, client: Client) -> None:
     while True:
-        await asyncio.sleep(1)
+        await asyncio.sleep(1 * 60)
         if triggered_chance(RANDOM_MARKOV_MESSAGE_CHANCE):
             markov_message = await markov2(context=MessageContext.empty(), client=client)
             await client.get_channel(
