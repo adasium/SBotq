@@ -34,7 +34,7 @@ multidict==5.2.0
     #   yarl
 pendulum==2.1.2
     # via -r requirements.in
-pillow==8.4.0
+pillow==9.0.1
     # via -r requirements.in
 pycparser==2.21
     # via cffi
