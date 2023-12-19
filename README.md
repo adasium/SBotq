@@ -8,7 +8,7 @@ Discord chat bot that works for [SB](<https://en.wikipedia.org/wiki/Ministry_of_
 specify in env variables or in .env file inside project root
 
 | Key                                | Value                                                  |
-|------------------------------------+--------------------------------------------------------|
+|------------------------------------|--------------------------------------------------------|
 | `TOKEN`                            | discord authentication token                           |
 | `INSPIRATIONAL_MESSAGE_CHANNEL_ID` | channel id that should get daily inspirational message |
 | `MARKOV_CHANNEL_BLACKLIST`         | bot cannot eavesdrop here (separator=`;`)              |
