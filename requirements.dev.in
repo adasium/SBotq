@@ -2,3 +2,4 @@ mypy
 pre-commit
 sqlalchemy2-stubs
 types-requests
+pip-tools
