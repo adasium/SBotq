@@ -11,6 +11,7 @@ from typing import Protocol
 from typing import TYPE_CHECKING
 
 import discord
+import pendulum
 import requests
 from PIL import Image
 from sqlalchemy import and_
@@ -482,3 +483,17 @@ async def generate_markov_at_random_time(context: MessageContext, client: Client
                     await client.get_channel(
                         id=getenv('RANDOM_MARKOV_MESSAGE_CHANNEL_ID', as_=int),
                     ).send(markov_message.result)
+
+
+@command(name='next_bernardynki', hidden=False, special=True)
+async def next_bernardynki(context: MessageContext, client: Client) -> MessageContext:
+    now = pendulum.now(pendulum.UTC)
+    first_bernardynki = pendulum.DateTime(2022, 1, 16, tzinfo=pendulum.UTC)
+
+    next_bernardynki = first_bernardynki
+    while next_bernardynki < now:
+        next_bernardynki = next_bernardynki.add(months=1, days=1)
+
+    bernardynki_fmt = next_bernardynki.strftime('%d-%m-%Y')
+    days = next_bernardynki.diff(now).in_days()
+    return context.updated(result=f'{bernardynki_fmt} (in {days} days)')

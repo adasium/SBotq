@@ -1,5 +1,5 @@
-mypy
+mypy==0.910
 pre-commit
 sqlalchemy2-stubs
 types-requests
-pip-tools
+pip-tools==6.8.0

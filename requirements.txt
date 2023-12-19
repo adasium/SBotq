@@ -7,7 +7,7 @@
 aiohttp==3.7.4
     # via
     #   -r requirements.in
-    #   discord.py
+    #   discord-py
 async-timeout==3.0.1
     # via aiohttp
 attrs==21.2.0
@@ -18,7 +18,7 @@ chardet==3.0.4
     # via aiohttp
 charset-normalizer==2.0.7
     # via requests
-discord.py==1.7.3
+discord-py==1.7.3
     # via -r requirements.in
 greenlet==1.1.2
     # via sqlalchemy
@@ -30,10 +30,18 @@ multidict==5.2.0
     # via
     #   aiohttp
     #   yarl
+pendulum==2.1.2
+    # via -r requirements.in
 pillow==8.4.0
     # via -r requirements.in
+python-dateutil==2.8.2
+    # via pendulum
+pytzdata==2020.1
+    # via pendulum
 requests==2.26.0
     # via -r requirements.in
+six==1.16.0
+    # via python-dateutil
 sqlalchemy==1.4.26
     # via -r requirements.in
 typing-extensions==3.10.0.2
