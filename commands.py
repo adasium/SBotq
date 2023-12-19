@@ -1,4 +1,5 @@
 from __future__ import annotations
+from exceptions import DiscordMessageMissingException
 
 import asyncio
 import io
@@ -258,7 +259,7 @@ async def generate_markov2(context: MessageContext, client: Client) -> MessageCo
     try:
         markov_message = context.command.args
         previous_message: Optional[str] = context.command.args[-1]
-    except IndexError:
+    except (IndexError, DiscordMessageMissingException):
         markov_message = []
         previous_message = None
 
@@ -450,7 +451,7 @@ async def generate_markov_at_random_time(context: MessageContext, client: Client
     while True:
         await asyncio.sleep(1 * 60)
         if triggered_chance(RANDOM_MARKOV_MESSAGE_CHANCE):
-            markov_message = await markov2(context=MessageContext.empty(), client=client)
+            markov_message = await generate_markov2(context=MessageContext.empty(), client=client)
             await client.get_channel(
                 id=getenv('RANDOM_MARKOV_MESSAGE_CHANNEL_ID', as_=int),
             ).send(markov_message.result)
