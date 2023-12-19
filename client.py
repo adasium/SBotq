@@ -1,16 +1,21 @@
 import asyncio
 
 import discord
+from sqlalchemy import select
 
 from command import Command
 from commands import COMMANDS
 from commands import daily_inspiration
 from commands import markov2
 from commands import markov3
+from commands import SPECIAL_COMMANDS
+from database import get_db
 from logger import get_logger
 from message_context import MessageContext
+from models import CommandModel
 from settings import DEFAULT_PREFIX
 from utils import getenv
+from utils import is_special_command
 from utils import parse_commands
 
 
@@ -51,19 +56,36 @@ class Client(discord.Client):
             await markov3(current_context, self)
             return
 
-        command = message.content.removeprefix(self.prefix)
-        if len(command) == 0:
+        if len(message.content.removeprefix(self.prefix)) == 0:
             return
+
+        if is_special_command(message.content, commands=COMMANDS, special_commands=SPECIAL_COMMANDS):
+            command = Command.from_str(message.content)
+            special_command_context = await COMMANDS[command.name](current_context.updated(command=command), self)
+            return await message.channel.send(special_command_context.result)
 
         try:
             commands = parse_commands(message.content, prefix=self.prefix)
             logger.debug('parsed commands %s', commands)
             for command in commands:
                 if command.name not in COMMANDS:
-                    await message.channel.send(f'Command {command.name} not found')
-                else:
-                    command_func = COMMANDS[command.name]
-                    current_context = await command_func(current_context.updated(command=command), self)
+                    with get_db() as db:
+                        fetched_command = db.execute(
+                            select(CommandModel)
+                            .where(CommandModel.name == command.name),
+                        ).scalar_one_or_none()
+                        if fetched_command is not None:
+                            logger.debug('Fetched command: [%s|%s]', fetched_command.name, fetched_command.command)
+                            for c in parse_commands(fetched_command.command):
+                                logger.debug('Executing fetched command: [%s|%s]', c.name, c.raw_args)
+                                current_context = await COMMANDS[c.name](current_context.updated(command=c), self)
+                            continue
+                    return await message.channel.send(f'Command {command.name} not found')
+                logger.debug('Executing normal command: %s', command.name)
+                command_func = COMMANDS[command.name]
+                current_context = await command_func(current_context.updated(command=command), self)
+
+            logger.debug('Final result of %s: %s', message.content, current_context.result)
             if current_context.result:
                 await message.channel.send(current_context.result)
         except ValueError as e:

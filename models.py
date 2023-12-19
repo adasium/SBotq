@@ -10,7 +10,7 @@ class CommandModel(Base):
     __tablename__ = 'commands'
 
     id: int = Column(Integer, primary_key=True, unique=True)
-    name: str = Column(String)
+    name: str = Column(String, unique=True)
     command: str = Column(String)
     counter: int = Column(Integer, default=0)
 

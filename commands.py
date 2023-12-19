@@ -11,6 +11,7 @@ import discord
 import requests
 from PIL import Image
 from sqlalchemy import and_
+from sqlalchemy import delete
 from sqlalchemy import or_
 from sqlalchemy import select
 from sqlalchemy import update
@@ -19,6 +20,7 @@ from database import get_db
 from decorators import daily
 from logger import get_logger
 from message_context import MessageContext
+from models import CommandModel
 from models import Markov2
 from models import Markov3
 from settings import DISCORD_MESSAGE_LIMIT
@@ -37,10 +39,11 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 COMMANDS = {}
-HIDDEN_COMMANDS = set()
+HIDDEN_COMMANDS = {}
+SPECIAL_COMMANDS = {}
 
 
-def command(*, name: str, hidden: bool = False) -> Callable[[CommandFunc], CommandFunc]:
+def command(*, name: str, hidden: bool = False, special: bool = False) -> Callable[[CommandFunc], CommandFunc]:
     def decorator(func: CommandFunc) -> CommandFunc:
         @wraps(func)
         async def wrapper(context: MessageContext, client: Client) -> MessageContext:
@@ -48,7 +51,9 @@ def command(*, name: str, hidden: bool = False) -> Callable[[CommandFunc], Comma
         if not hidden:
             COMMANDS[name] = wrapper
         else:
-            HIDDEN_COMMANDS.add(wrapper)
+            HIDDEN_COMMANDS[name] = wrapper
+        if special:
+            SPECIAL_COMMANDS[name] = wrapper
         return wrapper
     return decorator
 
@@ -90,9 +95,11 @@ async def random_(context: MessageContext, client: Client) -> MessageContext:
 
 @command(name='echo')
 async def echo(context: MessageContext, client: Client) -> MessageContext:
-    if (cmd := context.command) is not None:
-        return context.updated(result=cmd.raw_args)
-    return context
+    if context.command.raw_args:
+        content = context.command.raw_args
+    else:
+        content = ' '.join([context.result] * 2)
+    return context.updated(result=content)
 
 
 @command(name='scream')
@@ -325,3 +332,80 @@ async def generate_markov3(context: MessageContext, client: Client) -> MessageCo
             markov_message.append(previous_message.last)
 
     return context.updated(result=context.result + ' ' + ' '.join(markov_message))
+
+
+@command(name='addcmd', hidden=False, special=True)
+async def add_command(context: MessageContext, client: Client) -> MessageContext:
+    if len(context.command.args) == 0:
+        return context.updated(result=f'Usage: `{client.prefix}updatecmd <command_name>`')
+    cmd_name = context.command.args[0]
+    try:
+        with get_db() as db:
+            db.add(
+                CommandModel(
+                    name=cmd_name,
+                    command=context.command.raw_args.split(' ', maxsplit=1)[1],
+                ),
+            )
+            db.commit()
+    except Exception as e:
+        return context.updated(result=str(e))
+    return context.updated(result=f'Command `{cmd_name}` added')
+
+
+@command(name='updatecmd', hidden=False, special=True)
+async def update_command(context: MessageContext, client: Client) -> MessageContext:
+    if len(context.command.args) == 0:
+        return context.updated(result=f'Usage: `{client.prefix}updatecmd <command_name>`')
+    cmd_name = context.command.args[0]
+    try:
+        with get_db() as db:
+            result = db.execute(
+                update(CommandModel)
+                .where(CommandModel.name == cmd_name)
+                .values(command=context.command.raw_args.split(' ', maxsplit=1)[1]),
+            )
+            db.commit()
+            if result.rowcount == 0:  # type: ignore
+                return context.updated(result=f'Command `{cmd_name}` not found')
+    except Exception as e:
+        return context.updated(result=str(e))
+    return context.updated(result=f'Command `{cmd_name}` updated')
+
+
+@command(name='delcmd', hidden=False, special=True)
+async def delete_command(context: MessageContext, client: Client) -> MessageContext:
+    if len(context.command.args) != 1:
+        return context.updated(result=f'Usage: `{client.prefix}updatecmd <command_name>`')
+    cmd_name = context.command.args[0]
+    try:
+        with get_db() as db:
+            db.execute(
+                delete(CommandModel)
+                .where(CommandModel.name == cmd_name),
+            )
+            db.commit()
+    except Exception as e:
+        return context.updated(result=str(e))
+    return context.updated(result=f'Command `{cmd_name}` deleted')
+
+
+@command(name='showcmd', hidden=False, special=True)
+async def show_command(context: MessageContext, client: Client) -> MessageContext:
+    if len(context.command.args) != 1:
+        return context.updated(result=f'Usage: `{client.prefix}updatecmd <command_name>`')
+    cmd_name = context.command.args[0]
+    try:
+        if cmd_name in COMMANDS:
+            return context.updated(result=f'Command `{cmd_name}` is builtin')
+        with get_db() as db:
+            command = db.execute(
+                select(CommandModel)
+                .where(CommandModel.name == cmd_name),
+            ).scalar_one_or_none()
+            if command is not None:
+                return context.updated(result=f'Command `{cmd_name}` is defined as: `{command.command}`')
+            else:
+                return context.updated(result=f'Command `{cmd_name}` is not defined')
+    except Exception as e:
+        return context.updated(result=str(e))

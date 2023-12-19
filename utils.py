@@ -7,6 +7,7 @@ from datetime import datetime
 from datetime import time
 from datetime import timedelta
 from typing import Any
+from typing import Awaitable
 from typing import Callable
 from typing import overload
 from typing import Type
@@ -111,3 +112,13 @@ class Buf:
     @property
     def last(self) -> Any:
         return self._buf[-1]
+
+
+def is_special_command(
+        full_message_content: str,
+        commands: dict[str, Callable],
+        special_commands: dict[str, Callable],
+        prefix: str = DEFAULT_PREFIX,
+) -> bool:
+    cmd_name = full_message_content.removeprefix(prefix).split(' ')[0]
+    return cmd_name in commands and cmd_name in special_commands
