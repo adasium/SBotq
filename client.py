@@ -52,7 +52,7 @@ class Client(discord.Client):
         if message.author == self.user:
             return
 
-        current_context = MessageContext(message=message, result='', command=Command.dummy())
+        current_context = MessageContext(discord_message=message, result='', command=Command.dummy())
 
         if self.user.mentioned_in(message):
             if message.content == '<@!%s>' % self.user.id:
@@ -114,4 +114,4 @@ class Client(discord.Client):
         while True:
             for command in self.scheduled_commands:
                 await asyncio.create_task(command(context=None, client=self))
-            await asyncio.sleep(24 * 60 * 60)
+            await asyncio.sleep(24 * 60 * 60 - 1)

@@ -241,8 +241,8 @@ async def train_markov(context: MessageContext, client: Client) -> MessageContex
                 and not message.content.startswith(client.prefix)
                 and len(message.content.split()) > MARKOV_MIN_WORD_COUNT
         ):
-            await markov2(MessageContext(message=message), client)
-            await markov3(MessageContext(message=message), client)
+            await markov2(MessageContext(discord_message=message), client)
+            await markov3(MessageContext(discord_message=message), client)
     logger.debug('DONE TRAINING ON CHANNEL %s', context.message.channel)
     return context
 
