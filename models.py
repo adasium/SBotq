@@ -40,6 +40,17 @@ class Markov3(Base):
     word3: Optional[str] = Column(String, nullable=True)
 
 
+class Carrot(Base):
+    __tablename__ = 'carrot'
+
+    id: int = Column(Integer, primary_key=True, unique=True)
+    counter: int = Column(Integer, default=1)
+    channel_id: int = Column(Integer)
+    guild_id: int = Column(Integer)
+    context: str = Column(String, nullable=True)
+    following: str = Column(String, nullable=False)
+
+
 class VariableModel(Base):
     __tablename__ = 'variables'
 

@@ -8,6 +8,7 @@ from sqlalchemy import select
 
 from command import Command
 from command import parse_commands
+from commands import carrot
 from commands import COMMANDS
 from commands import daily_inspiration
 from commands import generate_markov2
@@ -89,6 +90,7 @@ class Client(discord.Client):
         if not message.content.startswith(self.prefix) and message.channel.id not in self.markov_blacklisted_channel_ids:
             await markov2(current_context, self)
             await markov3(current_context, self)
+            await carrot(current_context, self)
             return
 
         if len(remove_prefix(text=message.content, prefix=self.prefix)) == 0:

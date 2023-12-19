@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import io
+import math
 import random
 from functools import wraps
 from typing import Awaitable
@@ -16,20 +17,26 @@ import requests
 from PIL import Image
 from sqlalchemy import and_
 from sqlalchemy import delete
+from sqlalchemy import desc
 from sqlalchemy import or_
 from sqlalchemy import select
 from sqlalchemy import update
 
+from carrotson import CONTEXT_SIZE
+from carrotson import Path
+from carrotson import split_into_paths
 from database import get_db
 from decorators import daily
 from exceptions import DiscordMessageMissingException
 from getenv import getenv
 from logger import get_logger
 from message_context import MessageContext
+from models import Carrot
 from models import CommandModel
 from models import Markov2
 from models import Markov3
 from models import VariableModel
+from settings import COMMON_PREFIXES
 from settings import DISCORD_MESSAGE_LIMIT
 from settings import MARKOV_MIN_WORD_COUNT
 from settings import RANDOM_MARKOV_MESSAGE_CHANCE
@@ -215,6 +222,34 @@ async def markov3(context: MessageContext, client: Client) -> MessageContext:
     return context
 
 
+async def carrot(context: MessageContext, client: Client) -> MessageContext:
+    with get_db() as db:
+        for path in split_into_paths(context.message.content):
+            result = db.execute(
+                update(Carrot)
+                .where(
+                    and_(
+                        Carrot.context == path.context,
+                        Carrot.following == path.following,
+                        Carrot.channel_id == context.message.channel.id,
+                        Carrot.guild_id == context.message.guild.id,
+                    ),
+                )
+                .values(counter=Carrot.counter + 1),
+            )
+            if result.rowcount == 0:  # type: ignore
+                db.add(
+                    Carrot(
+                        context=path.context,
+                        following=path.following,
+                        channel_id=context.message.channel.id,
+                        guild_id=context.message.guild.id,
+                    ),
+                )
+        db.commit()
+    return context
+
+
 @command(name='inspire', hidden=False)
 async def inspire(context: MessageContext, client: Client) -> MessageContext:
     logger.info('Sending an inspiring message.')
@@ -252,6 +287,22 @@ async def train_markov(context: MessageContext, client: Client) -> MessageContex
         ):
             await markov2(MessageContext(discord_message=message), client)
             await markov3(MessageContext(discord_message=message), client)
+    logger.debug('DONE TRAINING ON CHANNEL %s', context.message.channel)
+    return context
+
+
+@command(name='train_carrot', hidden=False)
+async def train_carrot(context: MessageContext, client: Client) -> MessageContext:
+    i = 1
+    async for message in context.message.channel.history(limit=None):
+        i += 1
+        logger.debug('Training on channel %s: message no %s', message.channel, i)
+        if (
+                message.author != client.user
+                and not message.content.startswith((client.prefix, *COMMON_PREFIXES))
+                and len(message.content) >= CONTEXT_SIZE
+        ):
+            await carrot(MessageContext(discord_message=message), client)
     logger.debug('DONE TRAINING ON CHANNEL %s', context.message.channel)
     return context
 
@@ -343,6 +394,38 @@ async def generate_markov3(context: MessageContext, client: Client) -> MessageCo
             markov_message.append(previous_message.last)
 
     return context.updated(result=context.result + ' ' + ' '.join(markov_message))
+
+
+def _get_carrot_candidates(db, context: str) -> list[Carrot]:
+    is_partial = 0 < len(context) < CONTEXT_SIZE
+    candidates = db.execute(
+        select(Carrot)
+        .where(
+            (Carrot.context == context) if not is_partial else Carrot.context.startswith(context),
+        )
+        .order_by(desc(Carrot.counter)),
+
+    ).scalars().all()
+    return candidates
+
+
+@command(name='carrot', hidden=False)
+async def generate_carrot(context: MessageContext, client: Client) -> MessageContext:
+    msg_context = context.command.raw_args
+
+    with get_db() as db:
+        while len(msg_context) < DISCORD_MESSAGE_LIMIT:
+            candidates = _get_carrot_candidates(db, context=msg_context[-CONTEXT_SIZE:] if msg_context else '')
+            if not candidates:
+                return context.updated(result=msg_context)
+
+            random.shuffle(candidates)
+            if 0 < len(msg_context) < CONTEXT_SIZE:
+                msg_context = candidates[0].context + candidates[0].following
+            else:
+                msg_context += candidates[0].following
+
+    return context.updated(result=msg_context)
 
 
 @command(name='addcmd', hidden=False, special=True)
