@@ -17,5 +17,7 @@ if __name__ == '__main__':
     try:
         loop.create_task(main())
         loop.run_forever()
+    except KeyboardInterrupt:
+        pass
     finally:
         loop.close()

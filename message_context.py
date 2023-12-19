@@ -1,6 +1,8 @@
 from __future__ import annotations
-import discord
+
 from typing import NamedTuple
+
+import discord
 
 
 class MessageContext(NamedTuple):
