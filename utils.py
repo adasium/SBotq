@@ -120,5 +120,11 @@ def is_special_command(
         special_commands: dict[str, Callable],
         prefix: str = DEFAULT_PREFIX,
 ) -> bool:
-    cmd_name = full_message_content.removeprefix(prefix).split(' ')[0]
+    cmd_name = remove_prefix(text=full_message_content, prefix=prefix).split(' ')[0]
     return cmd_name in commands and cmd_name in special_commands
+
+
+def remove_prefix(text: str, prefix: str) -> str:
+    if text.startswith(prefix):
+        return text[len(prefix):]
+    return text

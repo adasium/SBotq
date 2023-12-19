@@ -19,6 +19,7 @@ from settings import DEFAULT_PREFIX
 from utils import getenv
 from utils import is_special_command
 from utils import parse_commands
+from utils import remove_prefix
 
 
 logger = get_logger(__name__)
@@ -73,7 +74,7 @@ class Client(discord.Client):
             await markov3(current_context, self)
             return
 
-        if len(message.content.removeprefix(self.prefix)) == 0:
+        if len(remove_prefix(text=message.content, prefix=self.prefix)) == 0:
             return
 
         if is_special_command(message.content, commands=COMMANDS, special_commands=SPECIAL_COMMANDS):
