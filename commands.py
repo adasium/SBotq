@@ -80,3 +80,13 @@ async def echo(context: MessageContext, client: Client) -> MessageContext:
 @command(name='scream')
 async def scream(context: MessageContext, client: Client) -> MessageContext:
     return context.updated(result=context.result.upper())
+
+
+@command(name='shrug')
+async def shrug(context: MessageContext, client: Client) -> MessageContext:
+    if context.command.raw_args:
+        content = context.command.raw_args
+    else:
+        content = context.result
+    result = rf'¯\\\_{content}_/¯'
+    return context.updated(result=result)
