@@ -1,5 +1,4 @@
 from __future__ import annotations
-from exceptions import DiscordMessageMissingException
 
 import asyncio
 import io
@@ -22,6 +21,7 @@ from sqlalchemy import update
 
 from database import get_db
 from decorators import daily
+from exceptions import DiscordMessageMissingException
 from logger import get_logger
 from message_context import MessageContext
 from models import CommandModel
@@ -459,7 +459,7 @@ async def generate_markov_at_random_time(context: MessageContext, client: Client
                 random_markov_chance = RANDOM_MARKOV_MESSAGE_CHANCE
             else:
                 try:
-                    random_markov_chance = int(random_markov_chance)
+                    random_markov_chance = float(random_markov_chance)
                 except ValueError:
                     random_markov_chance = RANDOM_MARKOV_MESSAGE_CHANCE
             if triggered_chance(random_markov_chance):
