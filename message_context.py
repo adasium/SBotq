@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from dataclasses import field
+from typing import Optional
 
 import discord
 
@@ -14,7 +15,7 @@ class MessageContext:
     result: str = ''
     command: Command = field(default_factory=Command.dummy)
 
-    def updated(self, *, result: str | None = None, command: Command | None = None) -> MessageContext:
+    def updated(self, *, result: Optional[str] = None, command: Optional[Command] = None) -> MessageContext:
         if result is None and command is None:
             raise ValueError('Either result or command need to be updated')
         return MessageContext(

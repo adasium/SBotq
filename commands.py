@@ -5,6 +5,7 @@ import random
 from functools import wraps
 from typing import Awaitable
 from typing import Callable
+from typing import Optional
 from typing import TYPE_CHECKING
 
 import discord
@@ -250,7 +251,7 @@ async def train_markov(context: MessageContext, client: Client) -> MessageContex
 async def generate_markov2(context: MessageContext, client: Client) -> MessageContext:
     try:
         markov_message = context.command.args
-        previous_message: str | None = context.command.args[-1]
+        previous_message: Optional[str] = context.command.args[-1]
     except IndexError:
         markov_message = []
         previous_message = None

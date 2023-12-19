@@ -3,6 +3,9 @@ import functools
 from datetime import datetime
 from datetime import time
 from datetime import timedelta
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 from logger import get_logger
 from utils import time_difference
@@ -11,7 +14,7 @@ from utils import time_difference
 logger = get_logger(__name__)
 
 
-def delayed(until: time | None = None):
+def delayed(until: Optional[time] = None):
     def delayed_decorator(func):
         @functools.wraps(func)
         async def inner(*args, **kwargs):
@@ -24,7 +27,7 @@ def delayed(until: time | None = None):
     return delayed_decorator
 
 
-def run_every(hours: int = 0, minutes: int = 0, at: tuple[int, int] | str | None = None):
+def run_every(hours: int = 0, minutes: int = 0, at: Union[Tuple[int, int], str, None] = None):
     t = None
     if isinstance(at, tuple):
         t = time(*at)
@@ -39,5 +42,5 @@ def run_every(hours: int = 0, minutes: int = 0, at: tuple[int, int] | str | None
     return run_every__decorator
 
 
-def daily(at: tuple[int, int] | str | None = None):
+def daily(at: Union[Tuple[int, int], str, None] = None):
     return run_every(hours=24, at=at)

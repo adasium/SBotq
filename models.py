@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import String
@@ -22,8 +24,8 @@ class Markov2(Base):
     counter: int = Column(Integer, default=1)
     channel_id: int = Column(Integer)
     guild_id: int = Column(Integer)
-    word1: str | None = Column(String, nullable=True)
-    word2: str | None = Column(String, nullable=True)
+    word1: Optional[str] = Column(String, nullable=True)
+    word2: Optional[str] = Column(String, nullable=True)
 
 
 class Markov3(Base):
@@ -33,9 +35,9 @@ class Markov3(Base):
     counter: int = Column(Integer, default=1)
     channel_id: int = Column(Integer)
     guild_id: int = Column(Integer)
-    word1: str | None = Column(String, nullable=True)
-    word2: str | None = Column(String, nullable=False)
-    word3: str | None = Column(String, nullable=True)
+    word1: Optional[str] = Column(String, nullable=True)
+    word2: Optional[str] = Column(String, nullable=False)
+    word3: Optional[str] = Column(String, nullable=True)
 
 
 class VariableModel(Base):
