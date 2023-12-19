@@ -450,8 +450,20 @@ async def set_variable(context: MessageContext, client: Client) -> MessageContex
 async def generate_markov_at_random_time(context: MessageContext, client: Client) -> None:
     while True:
         await asyncio.sleep(1 * 60)
-        if triggered_chance(RANDOM_MARKOV_MESSAGE_CHANCE):
-            markov_message = await generate_markov2(context=MessageContext.empty(), client=client)
-            await client.get_channel(
-                id=getenv('RANDOM_MARKOV_MESSAGE_CHANNEL_ID', as_=int),
-            ).send(markov_message.result)
+        with get_db() as db:
+            random_markov_chance = db.execute(
+                select(VariableModel)
+                .where(VariableModel.name == 'RANDOM_MARKOV_CHANCE'),
+            ).scalar_one_or_none()
+            if random_markov_chance is None:
+                random_markov_chance = RANDOM_MARKOV_MESSAGE_CHANCE
+            else:
+                try:
+                    random_markov_chance = int(random_markov_chance)
+                except ValueError:
+                    random_markov_chance = RANDOM_MARKOV_MESSAGE_CHANCE
+            if triggered_chance(random_markov_chance):
+                markov_message = await generate_markov2(context=MessageContext.empty(), client=client)
+                await client.get_channel(
+                    id=getenv('RANDOM_MARKOV_MESSAGE_CHANNEL_ID', as_=int),
+                ).send(markov_message.result)
