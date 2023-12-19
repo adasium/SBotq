@@ -14,11 +14,13 @@ attrs==21.2.0
     # via aiohttp
 certifi==2021.10.8
     # via requests
+cffi==1.15.1
+    # via pynacl
 chardet==3.0.4
     # via aiohttp
 charset-normalizer==2.0.7
     # via requests
-discord-py==1.7.3
+discord-py[voice]==1.7.3
     # via -r requirements.in
 greenlet==1.1.2
     # via sqlalchemy
@@ -34,6 +36,10 @@ pendulum==2.1.2
     # via -r requirements.in
 pillow==8.4.0
     # via -r requirements.in
+pycparser==2.21
+    # via cffi
+pynacl==1.4.0
+    # via discord-py
 python-dateutil==2.8.2
     # via pendulum
 pytzdata==2020.1
@@ -41,7 +47,9 @@ pytzdata==2020.1
 requests==2.26.0
     # via -r requirements.in
 six==1.16.0
-    # via python-dateutil
+    # via
+    #   pynacl
+    #   python-dateutil
 sqlalchemy==1.4.26
     # via -r requirements.in
 typing-extensions==3.10.0.2
