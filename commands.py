@@ -250,19 +250,19 @@ async def generate_markov2(context: MessageContext, client: Client) -> MessageCo
             ).scalars().all()
 
             if len(candidates) == 0:
-                return context.updated(result=' '.join(markov_message))
+                return context.updated(result=context.result + ' ' + ' '.join(markov_message))
 
             [candidate] = random.choices(candidates, get_markov_weights(candidates))
             if candidate is None:
-                return context.updated(result=' '.join(markov_message))
+                return context.updated(result=context.result + ' ' + ' '.join(markov_message))
 
             previous_message = candidate.word2
             if previous_message is None or len(' '.join(markov_message + [previous_message])) > DISCORD_MESSAGE_LIMIT:
-                return context.updated(result=' '.join(markov_message))
+                return context.updated(result=context.result + ' ' + ' '.join(markov_message))
 
             markov_message.append(previous_message)
 
-    return context.updated(result=' '.join(markov_message))
+    return context.updated(result=context.result + ' ' + ' '.join(markov_message))
 
 
 @command(name='m3', hidden=False)
@@ -305,16 +305,16 @@ async def generate_markov3(context: MessageContext, client: Client) -> MessageCo
             ).scalars().all()
 
             if len(candidates) == 0:
-                return context.updated(result=' '.join(markov_message))
+                return context.updated(result=context.result + ' ' + ' '.join(markov_message))
 
             [candidate] = random.choices(candidates, get_markov_weights(candidates))
             if candidate is None or candidate.word3 is None:
-                return context.updated(result=' '.join(markov_message))
+                return context.updated(result=context.result + ' ' + ' '.join(markov_message))
 
             previous_message.push(candidate.word3)
             if previous_message is None or len(' '.join(markov_message + [previous_message.last])) > DISCORD_MESSAGE_LIMIT:
-                return context.updated(result=' '.join(markov_message))
+                return context.updated(result=context.result + ' ' + ' '.join(markov_message))
 
             markov_message.append(previous_message.last)
 
-    return context.updated(result=' '.join(markov_message))
+    return context.updated(result=context.result + ' ' + ' '.join(markov_message))
