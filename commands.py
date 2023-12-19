@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import io
 import random
 from functools import wraps
 from typing import Awaitable
 from typing import Callable
 from typing import Optional
+from typing import Protocol
 from typing import TYPE_CHECKING
 
 import discord
@@ -27,15 +29,19 @@ from models import Markov3
 from models import VariableModel
 from settings import DISCORD_MESSAGE_LIMIT
 from settings import MARKOV_MIN_WORD_COUNT
+from settings import RANDOM_MARKOV_MESSAGE_CHANCE
 from utils import Buf
 from utils import get_markov_weights
 from utils import getenv
 from utils import shuffle_str
+from utils import triggered_chance
 from utils import window
 
 if TYPE_CHECKING:
     from client import Client
-    CommandFunc = Callable[[MessageContext, Client], Awaitable[MessageContext]]
+
+    class CommandFunc(Protocol):
+        def __call__(self, context: MessageContext, client: Client) -> Awaitable[MessageContext]: ...
 
 
 logger = get_logger(__name__)
@@ -438,3 +444,13 @@ async def set_variable(context: MessageContext, client: Client) -> MessageContex
 
     except Exception as e:
         return context.updated(result=str(e))
+
+
+async def generate_markov_at_random_time(context: MessageContext, client: Client) -> None:
+    while True:
+        await asyncio.sleep(1)
+        if triggered_chance(RANDOM_MARKOV_MESSAGE_CHANCE):
+            markov_message = await asyncio.create_task(markov2(context=MessageContext.empty(), client=client))
+            await client.get_channel(
+                id=getenv('RANDOM_MARKOV_MESSAGE_CHANNEL_ID', as_=int),
+            ).send(markov_message)
