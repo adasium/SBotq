@@ -577,9 +577,9 @@ async def next_bernardynki(context: MessageContext, client: Client) -> MessageCo
     while next_bernardynki < now:
         next_bernardynki = next_bernardynki.add(months=1, days=1)
 
-    bernardynki_fmt = next_bernardynki.strftime('%d-%m-%Y')
+    bernardynki_fmt = next_bernardynki.format('dddd (DD-MM-YYYY)')
     days = next_bernardynki.diff(now).in_days()
-    return context.updated(result=f'{bernardynki_fmt} (in {days} days)')
+    return context.updated(result=f'in {days} days on {bernardynki_fmt}')
 
 
 @command(name='suggest', hidden=False, special=False)
