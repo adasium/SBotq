@@ -1,4 +1,7 @@
 import asyncio
+from datetime import datetime
+from datetime import time
+from datetime import timedelta
 
 import discord
 from sqlalchemy import select
@@ -10,9 +13,6 @@ from commands import daily_inspiration
 from commands import generate_markov2
 from commands import generate_markov_at_random_time
 from commands import markov2
-from datetime import datetime
-from datetime import time
-from datetime import timedelta
 from commands import markov3
 from commands import SPECIAL_COMMANDS
 from database import get_db
