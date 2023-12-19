@@ -1,5 +1,5 @@
 discord.py==1.7.3
-aiohttp>=3.7.4
+aiohttp==3.7.4
 Pillow==8.4.0
 requests==2.26.0
 SQLAlchemy==1.4.26
