@@ -1,8 +1,13 @@
 # env
+.env
 .venv
 
 # rubbish
 __pycache__
+*.temp
 
 # notes
 *.org
+
+# other
+*.db

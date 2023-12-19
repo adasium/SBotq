@@ -1,28 +1,54 @@
 from __future__ import annotations
 
+import io
 import random
 from functools import wraps
 from typing import Awaitable
 from typing import Callable
 from typing import TYPE_CHECKING
 
-from logger import logger
+import discord
+import requests
+from PIL import Image
+from sqlalchemy import and_
+from sqlalchemy import or_
+from sqlalchemy import select
+from sqlalchemy import update
+
+from database import get_db
+from decorators import daily
+from logger import get_logger
 from message_context import MessageContext
+from models import Markov2
+from models import Markov3
+from settings import DISCORD_MESSAGE_LIMIT
+from settings import MARKOV_MIN_WORD_COUNT
+from utils import Buf
+from utils import get_markov_weights
+from utils import getenv
+from utils import shuffle_str
+from utils import window
 
 if TYPE_CHECKING:
     from client import Client
     CommandFunc = Callable[[MessageContext, Client], Awaitable[MessageContext]]
 
 
+logger = get_logger(__name__)
+
 COMMANDS = {}
+HIDDEN_COMMANDS = set()
 
 
-def command(*, name: str) -> Callable[[CommandFunc], CommandFunc]:
+def command(*, name: str, hidden: bool = False) -> Callable[[CommandFunc], CommandFunc]:
     def decorator(func: CommandFunc) -> CommandFunc:
         @wraps(func)
         async def wrapper(context: MessageContext, client: Client) -> MessageContext:
             return await func(context, client)
-        COMMANDS[name] = wrapper
+        if not hidden:
+            COMMANDS[name] = wrapper
+        else:
+            HIDDEN_COMMANDS.add(wrapper)
         return wrapper
     return decorator
 
@@ -82,3 +108,213 @@ async def shrug(context: MessageContext, client: Client) -> MessageContext:
         content = context.result
     result = rf'¯\\\_{content}_/¯'
     return context.updated(result=result)
+
+
+@command(name='shuffle_words')
+async def shuffle_words(context: MessageContext, client: Client) -> MessageContext:
+    if context.command.raw_args:
+        content = context.command.raw_args
+    else:
+        content = context.result
+    return context.updated(result=' '.join(shuffle_str(word) for word in content.split()))
+
+
+@command(name='chid')
+async def chid(context: MessageContext, client: Client) -> MessageContext:
+    return context.updated(result=str(context.message.channel.id))
+
+
+@command(name='myid')
+async def myid(context: MessageContext, client: Client) -> MessageContext:
+    return context.updated(result=str(context.message.author.id))
+
+
+@command(name='markov2', hidden=True)
+async def markov2(context: MessageContext, client: Client) -> MessageContext:
+    parts = context.message.content.split()
+    if len(parts) < 2:
+        return context
+
+    with get_db() as db:
+        for word1, word2 in window([None] + parts + [None], n=2):
+            result = db.execute(
+                update(Markov2)
+                .where(
+                    and_(
+                        Markov2.word1 == word1,
+                        Markov2.word2 == word2,
+                        Markov2.channel_id == context.message.channel.id,
+                        Markov2.guild_id == context.message.guild.id,
+                    ),
+                )
+                .values(counter=Markov2.counter + 1),
+            )
+            if result.rowcount == 0:  # type: ignore
+                db.add(
+                    Markov2(
+                        word1=word1,
+                        word2=word2,
+                        channel_id=context.message.channel.id,
+                        guild_id=context.message.guild.id,
+                    ),
+                )
+        db.commit()
+    return context
+
+
+@command(name='markov3', hidden=True)
+async def markov3(context: MessageContext, client: Client) -> MessageContext:
+    parts = context.message.content.split()
+    if len(parts) < 3:
+        return context
+
+    with get_db() as db:
+        for word1, word2, word3 in window([None] + parts + [None], n=3):
+            result = db.execute(
+                update(Markov3)
+                .where(
+                    and_(
+                        Markov3.word1 == word1,
+                        Markov3.word2 == word2,
+                        Markov3.word3 == word3,
+                        Markov3.channel_id == context.message.channel.id,
+                        Markov3.guild_id == context.message.guild.id,
+                    ),
+                )
+                .values(counter=Markov3.counter + 1),
+            )
+            if result.rowcount == 0:  # type: ignore
+                db.add(
+                    Markov3(
+                        word1=word1,
+                        word2=word2,
+                        word3=word3,
+                        channel_id=context.message.channel.id,
+                        guild_id=context.message.guild.id,
+                    ),
+                )
+        db.commit()
+    return context
+
+
+@daily(at='8:00')
+@command(name='send_inspirational_message', hidden=True)
+async def send_inspirational_message(context: MessageContext, client: Client) -> MessageContext:
+    greeting = 'Miłego dnia i smacznej kawusi <3'
+    response = requests.get('https://inspirobot.me/api?generate=true')
+    image = Image.open(requests.get(response.text, stream=True).raw)
+    with io.BytesIO() as image_binary:
+        image.save(image_binary, 'PNG')
+        image_binary.seek(0)
+        channel = client.get_channel(getenv('INSPIRATIONAL_MESSAGE_CHANNEL_ID', as_=int))
+        await channel.send(
+            greeting,
+            file=discord.File(fp=image_binary, filename='daily_inspiration.png'),
+        )
+    return context.updated(result=greeting)
+
+
+@command(name='train_markov')
+async def train_markov(context: MessageContext, client: Client) -> MessageContext:
+    i = 1
+    async for message in context.message.channel.history(limit=None):
+        i += 1
+        logger.debug('Training on channel %s: message no %s', message.channel, i)
+        if (
+                message.author != client.user
+                and not message.content.startswith(client.prefix)
+                and len(message.content.split()) > MARKOV_MIN_WORD_COUNT
+        ):
+            await markov2(MessageContext(message=message), client)
+            await markov3(MessageContext(message=message), client)
+    logger.debug('DONE TRAINING ON CHANNEL %s', context.message.channel)
+    return context
+
+
+@command(name='m', hidden=False)
+async def generate_markov2(context: MessageContext, client: Client) -> MessageContext:
+    try:
+        markov_message = context.command.args
+        previous_message: str | None = context.command.args[-1]
+    except IndexError:
+        markov_message = []
+        previous_message = None
+
+    with get_db() as db:
+        while True:
+            candidates = db.execute(
+                select(Markov2)
+                .where(
+                    Markov2.word1 == previous_message,
+                ),
+            ).scalars().all()
+
+            if len(candidates) == 0:
+                return context.updated(result=' '.join(markov_message))
+
+            [candidate] = random.choices(candidates, get_markov_weights(candidates))
+            if candidate is None:
+                return context.updated(result=' '.join(markov_message))
+
+            previous_message = candidate.word2
+            if previous_message is None or len(' '.join(markov_message + [previous_message])) > DISCORD_MESSAGE_LIMIT:
+                return context.updated(result=' '.join(markov_message))
+
+            markov_message.append(previous_message)
+
+    return context.updated(result=' '.join(markov_message))
+
+
+@command(name='m3', hidden=False)
+async def generate_markov3(context: MessageContext, client: Client) -> MessageContext:
+    if len(context.command.args) != 0:
+        return context.updated(result="Currently command does not take any arguments. Sorry 'bout that.")
+
+    markov_message: list[str] = []
+    previous_message = Buf(size=2)
+    if previous_message.get() == [None, None]:
+        with get_db() as db:
+            candidates = db.execute(
+                select(Markov3),
+            ).scalars().all()
+            [candidate] = random.choices(candidates, get_markov_weights(candidates))
+            previous_message.push(candidate.word3)
+            markov_message.append(candidate.word3)
+            candidates = db.execute(
+                select(Markov3)
+                .where(
+                    or_(
+                        Markov3.word1 == candidate.word3,
+                        Markov3.word2 == candidate.word3,
+                    ),
+                ),
+            ).scalars().all()
+            [candidate] = random.choices(candidates, get_markov_weights(candidates))
+            previous_message.push(candidate.word3)
+            markov_message.append(candidate.word3)
+            markov_message = [w for w in markov_message if w is not None]
+
+    with get_db() as db:
+        while True:
+            candidates = db.execute(
+                select(Markov3)
+                .where(
+                    Markov3.word1 == previous_message.get()[0],
+                    Markov3.word2 == previous_message.get()[1],
+                ),
+            ).scalars().all()
+
+            if len(candidates) == 0:
+                return context.updated(result=' '.join(markov_message))
+
+            [candidate] = random.choices(candidates, get_markov_weights(candidates))
+            if candidate is None or candidate.word3 is None:
+                return context.updated(result=' '.join(markov_message))
+
+            previous_message.push(candidate.word3)
+            if previous_message is None or len(' '.join(markov_message + [previous_message.last])) > DISCORD_MESSAGE_LIMIT:
+                return context.updated(result=' '.join(markov_message))
+
+            markov_message.append(previous_message.last)
+
+    return context.updated(result=' '.join(markov_message))

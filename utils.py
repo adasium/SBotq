@@ -1,21 +1,25 @@
 from __future__ import annotations
 
+import itertools
 import os
+import random
+from datetime import datetime
+from datetime import time
+from datetime import timedelta
+from typing import Any
 from typing import Callable
 from typing import overload
 from typing import Type
 from typing import TypeVar
 
 from command import Command
+from models import Markov2
+from models import Markov3
 from settings import DEFAULT_PREFIX
+from settings import ENV_FILE_COMMENT
 
 
 T = TypeVar('T')
-U = TypeVar('U')
-
-
-def _ident(v: str) -> str:
-    return v
 
 
 @overload
@@ -38,6 +42,72 @@ def getenv(name: str, as_: Callable[[str], T] | Type[bool] | Type[str] = str) ->
     return as_(value)
 
 
+def load_env_file(path: str = '.env') -> None:
+    try:
+        with open(path) as f:
+            for line in f:
+                if line.startswith(ENV_FILE_COMMENT):
+                    continue
+                key, value = [item.strip() for item in line.split('=', maxsplit=1)]
+                os.environ[key] = value
+    except IOError as e:
+        print(e)
+
+
+load_env_file()
+
+
 def parse_commands(message: str, prefix: str = DEFAULT_PREFIX) -> list[Command]:
-    parts = [p.strip() for p in message.split('|')]
+    parts = [p.strip() for p in message.split(' | ')]
     return [Command.from_str(part) for part in parts]
+
+
+def time_difference(time1: time, time2: time) -> timedelta:
+    t1 = datetime(1990, 1, 1, time1.hour, time1.minute)
+    t2 = datetime(1990, 1, 1, time2.hour, time2.minute)
+    if t2 > t1:
+        return t2 - t1
+    else:
+        return t2 + timedelta(days=1) - t1
+
+
+def window(seq, n=2):
+    """
+    Returns a sliding window (of width n) over data from the iterable
+    s -> (s0,s1,...s[n-1]), (s1,s2,...,sn), ...
+    """
+
+    it = iter(seq)
+    result = tuple(itertools.islice(it, n))
+    if len(result) == n:
+        yield result
+    for elem in it:
+        result = result[1:] + (elem,)
+        yield result
+
+
+def shuffle_str(s: str) -> str:
+    stringlist = list(s)
+    random.shuffle(stringlist)
+    return ''.join(stringlist)
+
+
+def get_markov_weights(markovs: list[Markov2 | Markov3]) -> list[float]:
+    total = sum(markov.counter for markov in markovs)
+    return [markov.counter / total for markov in markovs]
+
+
+class Buf:
+    def __init__(self, size: int = 2) -> None:
+        self._buf = [None] * size
+        self.size = size
+
+    def push(self, value) -> None:
+        self._buf = (self._buf + [value])[-self.size:]
+
+    def get(self) -> list:
+        return self._buf
+
+    @property
+    def last(self) -> Any:
+        return self._buf[-1]

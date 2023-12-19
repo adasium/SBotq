@@ -10,17 +10,33 @@ async-timeout==3.0.1
     # via aiohttp
 attrs==21.2.0
     # via aiohttp
+certifi==2021.10.8
+    # via requests
 chardet==4.0.0
     # via aiohttp
+charset-normalizer==2.0.7
+    # via requests
 discord.py==1.7.3
     # via -r requirements.in
+greenlet==1.1.2
+    # via sqlalchemy
 idna==3.3
-    # via yarl
+    # via
+    #   requests
+    #   yarl
 multidict==5.2.0
     # via
     #   aiohttp
     #   yarl
+pillow==8.4.0
+    # via -r requirements.in
+requests==2.26.0
+    # via -r requirements.in
+sqlalchemy==1.4.26
+    # via -r requirements.in
 typing-extensions==3.10.0.2
     # via aiohttp
+urllib3==1.26.7
+    # via requests
 yarl==1.7.2
     # via aiohttp

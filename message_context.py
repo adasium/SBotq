@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-from typing import NamedTuple
+from dataclasses import dataclass
+from dataclasses import field
 
 import discord
 
 from command import Command
 
 
-class MessageContext(NamedTuple):
+@dataclass
+class MessageContext:
     message: discord.Message
-    result: str
-    command: Command
+    result: str = ''
+    command: Command = field(default_factory=Command.dummy)
 
     def updated(self, *, result: str | None = None, command: Command | None = None) -> MessageContext:
         if result is None and command is None:
