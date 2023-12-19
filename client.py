@@ -6,6 +6,7 @@ from sqlalchemy import select
 from command import Command
 from commands import COMMANDS
 from commands import daily_inspiration
+from commands import generate_markov2
 from commands import markov2
 from commands import markov3
 from commands import SPECIAL_COMMANDS
@@ -50,6 +51,13 @@ class Client(discord.Client):
             return
 
         current_context = MessageContext(message=message, result='', command=Command.dummy())
+
+        if self.user.mentioned_in(message):
+            if message.content == '<@!%s>' % self.user.id:
+                await message.channel.send(f'{message.author.mention} sup')
+            else:
+                generated_markov = (await generate_markov2(current_context, self)).result
+                await message.channel.send(generated_markov)
 
         if not message.content.startswith(self.prefix) and message.channel.id not in self.markov_blacklisted_channel_ids:
             await markov2(current_context, self)
