@@ -31,6 +31,7 @@ from models import VariableModel
 from settings import DISCORD_MESSAGE_LIMIT
 from settings import MARKOV_MIN_WORD_COUNT
 from settings import RANDOM_MARKOV_MESSAGE_CHANCE
+from settings import RANDOM_MARKOV_MESSAGE_COUNT
 from utils import Buf
 from utils import get_markov_weights
 from utils import getenv
@@ -463,7 +464,21 @@ async def generate_markov_at_random_time(context: MessageContext, client: Client
                 except ValueError:
                     random_markov_chance = RANDOM_MARKOV_MESSAGE_CHANCE
             if triggered_chance(random_markov_chance):
-                markov_message = await generate_markov2(context=MessageContext.empty(), client=client)
-                await client.get_channel(
-                    id=getenv('RANDOM_MARKOV_MESSAGE_CHANNEL_ID', as_=int),
-                ).send(markov_message.result)
+                random_markov_message_count = db.execute(
+                    select(VariableModel)
+                    .where(VariableModel.name == 'RANDOM_MARKOV_MESSAGE_COUNT'),
+                ).scalar_one_or_none()
+                if random_markov_message_count is None:
+                    random_markov_message_count = RANDOM_MARKOV_MESSAGE_COUNT
+                else:
+                    try:
+                        random_markov_message_count = float(random_markov_message_count.value)
+                    except ValueError:
+                        random_markov_message_count = RANDOM_MARKOV_MESSAGE_CHANCE
+                for _ in range(random_markov_message_count):
+                    markov_message = await generate_markov2(context=MessageContext.empty(), client=client)
+                    if triggered_chance(0.5):
+                        markov_message = await scream(markov_message, client=client)
+                    await client.get_channel(
+                        id=getenv('RANDOM_MARKOV_MESSAGE_CHANNEL_ID', as_=int),
+                    ).send(markov_message.result)
