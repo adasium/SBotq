@@ -4,9 +4,9 @@ import discord
 
 from command import Command
 from commands import COMMANDS
+from commands import inspire
 from commands import markov2
 from commands import markov3
-from commands import send_inspirational_message
 from logger import get_logger
 from message_context import MessageContext
 from settings import DEFAULT_PREFIX
@@ -22,7 +22,7 @@ class Client(discord.Client):
         super().__init__()
         self.prefix = prefix
         self.scheduled_commands = [
-            send_inspirational_message,
+            inspire,
         ]
         self.markov_blacklisted_channel_ids = [
             int(id)

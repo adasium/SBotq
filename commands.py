@@ -198,8 +198,8 @@ async def markov3(context: MessageContext, client: Client) -> MessageContext:
 
 
 @daily(at='8:00')
-@command(name='send_inspirational_message', hidden=True)
-async def send_inspirational_message(context: MessageContext, client: Client) -> MessageContext:
+@command(name='inspire', hidden=False)
+async def inspire(context: MessageContext, client: Client) -> MessageContext:
     greeting = 'Miłego dnia i smacznej kawusi <3'
     response = requests.get('https://inspirobot.me/api?generate=true')
     image = Image.open(requests.get(response.text, stream=True).raw)
