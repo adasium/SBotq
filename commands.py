@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import io
 import random
 from functools import wraps
 from typing import Awaitable
 from typing import Callable
 from typing import Optional
+from typing import Protocol
 from typing import TYPE_CHECKING
 
 import discord
@@ -19,6 +21,7 @@ from sqlalchemy import update
 
 from database import get_db
 from decorators import daily
+from exceptions import DiscordMessageMissingException
 from logger import get_logger
 from message_context import MessageContext
 from models import CommandModel
@@ -27,15 +30,20 @@ from models import Markov3
 from models import VariableModel
 from settings import DISCORD_MESSAGE_LIMIT
 from settings import MARKOV_MIN_WORD_COUNT
+from settings import RANDOM_MARKOV_MESSAGE_CHANCE
+from settings import RANDOM_MARKOV_MESSAGE_COUNT
 from utils import Buf
 from utils import get_markov_weights
 from utils import getenv
 from utils import shuffle_str
+from utils import triggered_chance
 from utils import window
 
 if TYPE_CHECKING:
     from client import Client
-    CommandFunc = Callable[[MessageContext, Client], Awaitable[MessageContext]]
+
+    class CommandFunc(Protocol):
+        def __call__(self, context: MessageContext, client: Client) -> Awaitable[MessageContext]: ...
 
 
 logger = get_logger(__name__)
@@ -252,7 +260,7 @@ async def generate_markov2(context: MessageContext, client: Client) -> MessageCo
     try:
         markov_message = context.command.args
         previous_message: Optional[str] = context.command.args[-1]
-    except IndexError:
+    except (IndexError, DiscordMessageMissingException):
         markov_message = []
         previous_message = None
 
@@ -438,3 +446,39 @@ async def set_variable(context: MessageContext, client: Client) -> MessageContex
 
     except Exception as e:
         return context.updated(result=str(e))
+
+
+async def generate_markov_at_random_time(context: MessageContext, client: Client) -> None:
+    while True:
+        await asyncio.sleep(1 * 60)
+        with get_db() as db:
+            random_markov_chance = db.execute(
+                select(VariableModel)
+                .where(VariableModel.name == 'RANDOM_MARKOV_CHANCE'),
+            ).scalar_one_or_none()
+            if random_markov_chance is None:
+                random_markov_chance = RANDOM_MARKOV_MESSAGE_CHANCE
+            else:
+                try:
+                    random_markov_chance = float(random_markov_chance.value)
+                except ValueError:
+                    random_markov_chance = RANDOM_MARKOV_MESSAGE_CHANCE
+            if triggered_chance(random_markov_chance):
+                random_markov_message_count = db.execute(
+                    select(VariableModel)
+                    .where(VariableModel.name == 'RANDOM_MARKOV_MESSAGE_COUNT'),
+                ).scalar_one_or_none()
+                if random_markov_message_count is None:
+                    random_markov_message_count = RANDOM_MARKOV_MESSAGE_COUNT
+                else:
+                    try:
+                        random_markov_message_count = int(random_markov_message_count.value)
+                    except ValueError:
+                        random_markov_message_count = RANDOM_MARKOV_MESSAGE_CHANCE
+                for _ in range(random_markov_message_count):
+                    markov_message = await generate_markov2(context=MessageContext.empty(), client=client)
+                    if triggered_chance(0.5):
+                        markov_message = await scream(markov_message, client=client)
+                    await client.get_channel(
+                        id=getenv('RANDOM_MARKOV_MESSAGE_CHANNEL_ID', as_=int),
+                    ).send(markov_message.result)

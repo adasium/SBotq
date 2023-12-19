@@ -8,6 +8,7 @@ from command import parse_commands
 from commands import COMMANDS
 from commands import daily_inspiration
 from commands import generate_markov2
+from commands import generate_markov_at_random_time
 from commands import markov2
 from commands import markov3
 from commands import SPECIAL_COMMANDS
@@ -40,8 +41,17 @@ class Client(discord.Client):
     async def on_ready(self) -> None:
         logger.info('Logged on as %s', self.user)
         for blacklisted_channel_id in self.markov_blacklisted_channel_ids:
-            logger.debug('blacklisted channel %s, I cannot eaevesdrop in here', self.get_channel(blacklisted_channel_id))
-        await asyncio.create_task(self.scheduler())
+            logger.debug(
+                'blacklisted channel %s, I cannot eaevesdrop in here',
+                self.get_channel(blacklisted_channel_id),
+            )
+
+        await asyncio.gather(
+            *[
+                self.scheduler(),
+                generate_markov_at_random_time(context=MessageContext.empty(), client=self),
+            ], return_exceptions=True,
+        )
 
     async def on_message_edit(self, before: discord.Message, after: discord.Message) -> None:
         if after.content.startswith(self.prefix):

@@ -121,3 +121,7 @@ def remove_prefix(text: str, prefix: str) -> str:
     if text.startswith(prefix):
         return text[len(prefix):]
     return text
+
+
+def triggered_chance(percentage_chance: float) -> bool:
+    return random.random() < percentage_chance

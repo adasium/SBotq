@@ -12,6 +12,7 @@ specify in env variables or in .env file inside project root
 | `TOKEN`                            | discord authentication token                           |
 | `INSPIRATIONAL_MESSAGE_CHANNEL_ID` | channel id that should get daily inspirational message |
 | `MARKOV_CHANNEL_BLACKLIST`         | bot cannot eavesdrop here (separator=`;`)              |
+| `RANDOM_MARKOV_MESSAGE_CHANNEL_ID` | channel id that should get random markov message       |
 
 ## how to run
 
