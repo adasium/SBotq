@@ -472,7 +472,7 @@ async def generate_markov_at_random_time(context: MessageContext, client: Client
                     random_markov_message_count = RANDOM_MARKOV_MESSAGE_COUNT
                 else:
                     try:
-                        random_markov_message_count = float(random_markov_message_count.value)
+                        random_markov_message_count = int(random_markov_message_count.value)
                     except ValueError:
                         random_markov_message_count = RANDOM_MARKOV_MESSAGE_CHANCE
                 for _ in range(random_markov_message_count):
