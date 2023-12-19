@@ -10,6 +10,9 @@ from commands import daily_inspiration
 from commands import generate_markov2
 from commands import generate_markov_at_random_time
 from commands import markov2
+from datetime import datetime
+from datetime import time
+from datetime import timedelta
 from commands import markov3
 from commands import SPECIAL_COMMANDS
 from database import get_db
@@ -28,7 +31,10 @@ logger = get_logger(__name__)
 
 class Client(discord.Client):
     def __init__(self, prefix: str = DEFAULT_PREFIX) -> None:
-        super().__init__()
+        intents = discord.Intents.default()
+        intents.message_content = True
+        super().__init__(intents=intents)
+
         self.prefix = prefix
         self.scheduled_commands = [
             daily_inspiration,
@@ -121,7 +127,21 @@ class Client(discord.Client):
             logger.exception(e)
 
     async def scheduler(self) -> None:
+        now = datetime.now()
+        when_should_be_called = {
+            command: next_call_timestamp(now, command.scheduled_at, command.scheduled_every)
+            for command in self.scheduled_commands
+        }
         while True:
             for command in self.scheduled_commands:
-                await asyncio.create_task(command(context=None, client=self))
-            await asyncio.sleep(24 * 60 * 60 - 1)
+                if when_should_be_called[command] < datetime.now():
+                    await asyncio.create_task(command(context=None, client=self))
+                    when_should_be_called[command] = next_call_timestamp(datetime.now(), command.scheduled_at, command.scheduled_every)
+            await asyncio.sleep(1)
+
+
+def next_call_timestamp(now: datetime, scheduled_at: time, scheduled_every: timedelta) -> datetime:
+    candidate = datetime(now.year, now.month, now.day, scheduled_at.hour, scheduled_at.minute)
+    while candidate < now:
+        candidate += scheduled_every
+    return candidate

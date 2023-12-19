@@ -31,7 +31,11 @@ def delayed(until: Optional[time] = None):
     return delayed_decorator
 
 
-def run_every(hours: int = 0, minutes: int = 0, at: Union[Tuple[int, int], str, None] = None):
+def run_every(
+    hours: int = 0,
+    minutes: int = 0,
+    at: Union[Tuple[int, int], str, None] = None,
+):
     t = None
     if isinstance(at, tuple):
         t = time(*at)
@@ -42,7 +46,7 @@ def run_every(hours: int = 0, minutes: int = 0, at: Union[Tuple[int, int], str, 
     def run_every__decorator(func):
         func.scheduled_every = timedelta(hours=hours, minutes=minutes)
         func.scheduled_at = t
-        return delayed(until=t)(func)
+        return func
     return run_every__decorator
 
 
