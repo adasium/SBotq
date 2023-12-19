@@ -20,7 +20,11 @@ def delayed(until: Optional[time] = None):
         async def inner(*args, **kwargs):
             if until is not None:
                 wait_for = time_difference(datetime.now().time(), until)
-                logger.info('send_inspirational_message, waiting for: %s hours, %s minutes', wait_for.seconds // 3600, wait_for.seconds // 60 % 60)
+                logger.info(
+                    f'{func.__name__}: waiting for: %s hours, %s minutes',
+                    wait_for.seconds // 3600,
+                    wait_for.seconds // 60 % 60,
+                )
                 await asyncio.sleep(wait_for.total_seconds())
             return await func(*args, **kwargs)
         return inner
