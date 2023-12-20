@@ -71,7 +71,9 @@ class Client(discord.Client):
 
         current_context = MessageContext(discord_message=message, result='', command=Command.dummy())
 
-        if self.user.mentioned_in(message):
+        is_mentioned_directly = self.user.mentioned_in(message)
+        is_mentioned_via_role = set(message.guild.me.roles).intersection(set(message.role_mentions))
+        if is_mentioned_directly or is_mentioned_via_role:
             if message.content == '<@!%s>' % self.user.id:
                 mention_msg = 'sup'
                 with get_db() as db:
