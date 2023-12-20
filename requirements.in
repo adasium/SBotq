@@ -1,5 +1,5 @@
-attrs==21.2.0
-discord.py[voice]==2.2.3
+attrs==23.1.0
+discord.py[voice]==2.3.2
 aiohttp==3.8.4
 pendulum==2.1.2
 Pillow==9.0.1

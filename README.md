@@ -19,19 +19,18 @@ specify in env variables or in .env file inside project root
 works for python3.8 so newer versions should work too
 
 ```bash
-virtualenv -p python3.8 .venv
+python3.8 -m venv .venv
 source .venv/bin/activate
-pip3 install -r requirements.txt
+python -m pip install -r requirements.txt
 python main.py
 ```
 
 # development
 
 ```bash
-virtualenv -p python3.8 .venv
+python3.8 -m venv .venv
 source .venv/bin/activate
-pip3 install -r requirements.txt
-pip3 install -r requirements.dev.txt
+python -m pip install -r requirements.dev.txt
 pre-commit install
 python main.py
 ```
