@@ -64,6 +64,13 @@ class Client(discord.Client):
         if after.content.startswith(self.prefix):
             await self.on_message(after)
 
+    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent) -> None:
+        message = await self.get_channel(payload.channel_id).fetch_message(payload.message_id)
+        reaction_count = len([r for r in message.reactions if r.emoji == payload.emoji])
+        logger.debug('somebody reacted: %s reaction_count: %s', payload.emoji, reaction_count)
+        if reaction_count >= 3:
+            await message.add_reaction(payload.emoji)
+
     async def on_message(self, message: discord.Message) -> None:
         logger.debug('[%s > %s] %s: %s', message.guild.name, message.channel.name, message.author, message.content)
         if message.author == self.user:
