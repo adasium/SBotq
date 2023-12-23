@@ -25,9 +25,13 @@ from models import VariableModel
 from settings import DEFAULT_PREFIX
 from utils import is_special_command
 from utils import remove_prefix
+import monkeypatch
 
 
 logger = get_logger(__name__)
+
+
+discord.gateway.KeepAliveHandler.run = monkeypatch.run
 
 
 class Client(discord.Client):
@@ -66,9 +70,13 @@ class Client(discord.Client):
 
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent) -> None:
         message = await self.get_channel(payload.channel_id).fetch_message(payload.message_id)
-        reaction_count = [r for r in message.reactions if r.emoji == payload.emoji][0].count
-        logger.debug('somebody reacted: %s reaction_count: %s', payload.emoji, reaction_count)
-        if reaction_count >= 3:
+        message_reaction = [
+            r for r in message.reactions
+            if (payload.emoji.is_custom_emoji() and payload.emoji == r.emoji)
+            or (not payload.emoji.is_custom_emoji() and payload.emoji.name == r.emoji)
+        ][0]
+        logger.debug('somebody reacted: %s reaction_count: %s', payload.emoji, message_reaction.count)
+        if message_reaction.count >= 3:
             await message.add_reaction(payload.emoji)
 
     async def on_message(self, message: discord.Message) -> None:
@@ -90,7 +98,7 @@ class Client(discord.Client):
                     ).scalar_one_or_none()
                     if fetched_mention_msg is not None:
                         mention_msg = fetched_mention_msg.value
-                await message.channel.send(f'{message.author.mention} {mention_msg}')
+                await message.channel.send(f' {mention_msg}')
             else:
                 generated_markov = (await generate_markov2(current_context, self)).result
                 await message.channel.send(generated_markov)
