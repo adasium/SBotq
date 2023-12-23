@@ -75,6 +75,8 @@ class Client(discord.Client):
             if (payload.emoji.is_custom_emoji() and payload.emoji == r.emoji)
             or (not payload.emoji.is_custom_emoji() and payload.emoji.name == r.emoji)
         ][0]
+        if message_reaction.me:
+            return None
         logger.debug('somebody reacted: %s reaction_count: %s', payload.emoji, message_reaction.count)
         if message_reaction.count >= 3:
             await message.add_reaction(payload.emoji)
