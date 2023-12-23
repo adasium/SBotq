@@ -66,7 +66,7 @@ class Client(discord.Client):
 
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent) -> None:
         message = await self.get_channel(payload.channel_id).fetch_message(payload.message_id)
-        reaction_count = len([r for r in message.reactions if r.emoji == payload.emoji])
+        reaction_count = [r for r in message.reactions if r.emoji == payload.emoji][0].count
         logger.debug('somebody reacted: %s reaction_count: %s', payload.emoji, reaction_count)
         if reaction_count >= 3:
             await message.add_reaction(payload.emoji)
