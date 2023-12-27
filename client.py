@@ -112,6 +112,9 @@ class Client(discord.Client):
             await carrot(current_context, self)
             return
 
+        if not message.content.startswith(self.prefix):
+            return
+
         if len(remove_prefix(text=message.content, prefix=self.prefix)) == 0:
             return
 
