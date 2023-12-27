@@ -568,14 +568,16 @@ async def generate_markov_at_random_time(context: MessageContext, client: discor
 async def next_bernardynki(context: MessageContext, client: discord.Client) -> MessageContext:
     now = pendulum.now(pendulum.UTC)
     first_bernardynki = pendulum.DateTime(2022, 1, 16, tzinfo=pendulum.UTC)
+    th_bernardynki = 1
 
     next_bernardynki = first_bernardynki
     while next_bernardynki < now:
         next_bernardynki = next_bernardynki.add(months=1, days=1)
+        th_bernardynki += 1
 
     bernardynki_fmt = next_bernardynki.format('dddd (DD-MM-YYYY)')
     days = next_bernardynki.diff(now).in_days()
-    return context.updated(result=f'in {days} days on {bernardynki_fmt}')
+    return context.updated(result=f'{th_bernardynki}. bernardynki in {days} days on {bernardynki_fmt}')
 
 
 @command(name='suggest', hidden=False, special=False)
