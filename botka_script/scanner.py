@@ -42,7 +42,6 @@ class Scanner:
             '{': TokenType.LEFT_BRACE,
             '}': TokenType.RIGHT_BRACE,
             ',': TokenType.COMMA,
-            '.': TokenType.DOT,
             '-': TokenType.MINUS,
             '+': TokenType.PLUS,
             ';': TokenType.SEMICOLON,
@@ -50,6 +49,10 @@ class Scanner:
         }
         if c in one_char_tokens:
             self._add_token(one_char_tokens[c])
+            return None
+
+        if c == '.' and not self._peek().isdigit():
+            self._add_token(TokenType.DOT)
             return None
 
         if c == '!':
@@ -91,7 +94,7 @@ class Scanner:
             self._scan_string()
             return None
 
-        if c.isdigit():
+        if c.isdigit() or c == '.':
             self._scan_number()
             return None
 
@@ -158,7 +161,10 @@ class Scanner:
             self._advance()
 
         value = self.source[self.start:self.current]
-        self._add_token(TokenType.NUMBER, float(value))
+        if '.' in value:
+            self._add_token(TokenType.NUMBER, float(value))
+        else:
+            self._add_token(TokenType.INTEGER, int(value))
 
     def _peek_next(self) -> str:
         if self.current + 1 >= len(self.source):

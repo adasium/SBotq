@@ -239,7 +239,7 @@ class Parser:
         if self._match(TokenType.NIL):
             return LiteralExpr(value=None)
 
-        if self._match(TokenType.NUMBER, TokenType.STRING):
+        if self._match(TokenType.NUMBER, TokenType.INTEGER, TokenType.STRING):
             return LiteralExpr(value=self._previous().literal)
 
         if self._match(TokenType.LEFT_PAREN):
@@ -291,6 +291,7 @@ def interpret(source: str) -> str:
             _errors = str(scanner.errors)
         return f'Scanner exception: {_errors}'
 
+    print(scanner.tokens)
     parser = Parser(tokens=scanner.tokens)
     try:
         expr = parser.parse()

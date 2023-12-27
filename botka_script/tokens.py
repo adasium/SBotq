@@ -32,6 +32,7 @@ class TokenType(Enum):
     IDENTIFIER = 'IDENTIFIER'
     STRING = 'STRING'
     NUMBER = 'NUMBER'
+    INTEGER = 'INTEGER'
 
     # Keywords.
     AND = 'AND'
