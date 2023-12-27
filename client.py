@@ -7,6 +7,7 @@ import discord
 from sqlalchemy import select
 
 import monkeypatch
+import settings
 from command import Command
 from command import parse_commands
 from commands import carrot
@@ -23,7 +24,6 @@ from logger import get_logger
 from message_context import MessageContext
 from models import CommandModel
 from models import VariableModel
-from settings import DEFAULT_PREFIX
 from utils import is_special_command
 from utils import remove_prefix
 
@@ -35,7 +35,7 @@ discord.gateway.KeepAliveHandler.run = monkeypatch.run
 
 
 class Client(discord.Client):
-    def __init__(self, prefix: str = DEFAULT_PREFIX) -> None:
+    def __init__(self, prefix: str = settings.DEFAULT_PREFIX) -> None:
         intents = discord.Intents.default()
         intents.message_content = True
         super().__init__(intents=intents)
@@ -65,7 +65,7 @@ class Client(discord.Client):
         )
 
     async def on_message_edit(self, before: discord.Message, after: discord.Message) -> None:
-        if after.content.startswith(self.prefix):
+        if after.content.startswith(settings.COMMON_PREFIXES):
             await self.on_message(after)
 
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent) -> None:
@@ -106,7 +106,7 @@ class Client(discord.Client):
                 await message.channel.send(generated_markov)
             return
 
-        if not message.content.startswith(self.prefix) and message.channel.id not in self.markov_blacklisted_channel_ids:
+        if not message.content.startswith(settings.COMMON_PREFIXES) and message.channel.id not in self.markov_blacklisted_channel_ids:
             await markov2(current_context, self)
             await markov3(current_context, self)
             await carrot(current_context, self)
