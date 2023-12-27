@@ -61,7 +61,7 @@ class AstPrinter(Visitor):
 
     def visit_LiteralExpr(self, expr: LiteralExpr):
         if expr.value is None:
-            return "nil"
+            return 'nil'
         else:
             return str(expr.value)
 

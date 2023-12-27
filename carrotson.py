@@ -1,7 +1,6 @@
 # https://github.com/tsoding/Gatekeeper/blob/master/internal/carrotson.go
 from __future__ import annotations
 
-from itertools import islice
 from typing import Generator
 from typing import NamedTuple
 

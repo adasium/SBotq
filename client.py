@@ -6,6 +6,7 @@ from datetime import timedelta
 import discord
 from sqlalchemy import select
 
+import monkeypatch
 from command import Command
 from command import parse_commands
 from commands import carrot
@@ -25,7 +26,6 @@ from models import VariableModel
 from settings import DEFAULT_PREFIX
 from utils import is_special_command
 from utils import remove_prefix
-import monkeypatch
 
 
 logger = get_logger(__name__)

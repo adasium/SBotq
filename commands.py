@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import io
-import math
 import random
 from functools import wraps
 from typing import Awaitable
 from typing import Callable
 from typing import Optional
 from typing import Protocol
-from typing import TYPE_CHECKING
 
 import discord
 import pendulum
@@ -24,7 +22,6 @@ from sqlalchemy import update
 
 from botka_script.expr import interpret
 from carrotson import CONTEXT_SIZE
-from carrotson import Path
 from carrotson import split_into_paths
 from database import get_db
 from decorators import daily
@@ -48,11 +45,9 @@ from utils import shuffle_str
 from utils import triggered_chance
 from utils import window
 
-if TYPE_CHECKING:
-    from client import Client
 
-    class CommandFunc(Protocol):
-        def __call__(self, context: MessageContext, client: Client) -> Awaitable[MessageContext]: ...
+class CommandFunc(Protocol):
+    def __call__(self, context: MessageContext, client: discord.Client) -> Awaitable[MessageContext]: ...
 
 
 logger = get_logger(__name__)
@@ -65,7 +60,7 @@ SPECIAL_COMMANDS = {}
 def command(*, name: str, hidden: bool = False, special: bool = False) -> Callable[[CommandFunc], CommandFunc]:
     def decorator(func: CommandFunc) -> CommandFunc:
         @wraps(func)
-        async def wrapper(context: MessageContext, client: Client) -> MessageContext:
+        async def wrapper(context: MessageContext, client: discord.Client) -> MessageContext:
             return await func(context, client)
         if not hidden:
             COMMANDS[name] = wrapper
@@ -78,24 +73,24 @@ def command(*, name: str, hidden: bool = False, special: bool = False) -> Callab
 
 
 @command(name='ping')
-async def ping(context: MessageContext, client: Client) -> MessageContext:
+async def ping(context: MessageContext, client: discord.Client) -> MessageContext:
     return context.updated(result='pong')
 
 
 @command(name='bing')
-async def bing(context: MessageContext, client: Client) -> MessageContext:
+async def bing(context: MessageContext, client: discord.Client) -> MessageContext:
     return context.updated(result='bong')
 
 
 @command(name='commands')
-async def commands(context: MessageContext, client: Client) -> MessageContext:
+async def commands(context: MessageContext, client: discord.Client) -> MessageContext:
     prefix = client.prefix
     result = ', '.join(f'{prefix}{command}' for command in sorted(COMMANDS))
     return context.updated(result=result)
 
 
 @command(name='random')
-async def random_(context: MessageContext, client: Client) -> MessageContext:
+async def random_(context: MessageContext, client: discord.Client) -> MessageContext:
     try:
         logger.debug('%s', context.result)
         cmd = context.command
@@ -113,7 +108,7 @@ async def random_(context: MessageContext, client: Client) -> MessageContext:
 
 
 @command(name='echo')
-async def echo(context: MessageContext, client: Client) -> MessageContext:
+async def echo(context: MessageContext, client: discord.Client) -> MessageContext:
     if context.command.raw_args:
         content = context.command.raw_args
     else:
@@ -122,12 +117,12 @@ async def echo(context: MessageContext, client: Client) -> MessageContext:
 
 
 @command(name='scream')
-async def scream(context: MessageContext, client: Client) -> MessageContext:
+async def scream(context: MessageContext, client: discord.Client) -> MessageContext:
     return context.updated(result=context.result.upper())
 
 
 @command(name='shrug')
-async def shrug(context: MessageContext, client: Client) -> MessageContext:
+async def shrug(context: MessageContext, client: discord.Client) -> MessageContext:
     if context.command.raw_args:
         content = context.command.raw_args
     else:
@@ -137,7 +132,7 @@ async def shrug(context: MessageContext, client: Client) -> MessageContext:
 
 
 @command(name='shuffle_words')
-async def shuffle_words(context: MessageContext, client: Client) -> MessageContext:
+async def shuffle_words(context: MessageContext, client: discord.Client) -> MessageContext:
     if context.command.raw_args:
         content = context.command.raw_args
     else:
@@ -146,17 +141,17 @@ async def shuffle_words(context: MessageContext, client: Client) -> MessageConte
 
 
 @command(name='chid')
-async def chid(context: MessageContext, client: Client) -> MessageContext:
+async def chid(context: MessageContext, client: discord.Client) -> MessageContext:
     return context.updated(result=str(context.message.channel.id))
 
 
 @command(name='myid')
-async def myid(context: MessageContext, client: Client) -> MessageContext:
+async def myid(context: MessageContext, client: discord.Client) -> MessageContext:
     return context.updated(result=str(context.message.author.id))
 
 
 @command(name='markov2', hidden=True)
-async def markov2(context: MessageContext, client: Client) -> MessageContext:
+async def markov2(context: MessageContext, client: discord.Client) -> MessageContext:
     parts = context.message.content.split()
     if len(parts) < 2:
         return context
@@ -189,7 +184,7 @@ async def markov2(context: MessageContext, client: Client) -> MessageContext:
 
 
 @command(name='markov3', hidden=True)
-async def markov3(context: MessageContext, client: Client) -> MessageContext:
+async def markov3(context: MessageContext, client: discord.Client) -> MessageContext:
     parts = context.message.content.split()
     if len(parts) < 3:
         return context
@@ -223,7 +218,7 @@ async def markov3(context: MessageContext, client: Client) -> MessageContext:
     return context
 
 
-async def carrot(context: MessageContext, client: Client) -> MessageContext:
+async def carrot(context: MessageContext, client: discord.Client) -> MessageContext:
     with get_db() as db:
         for path in split_into_paths(context.message.content):
             result = db.execute(
@@ -252,7 +247,7 @@ async def carrot(context: MessageContext, client: Client) -> MessageContext:
 
 
 @command(name='inspire', hidden=False)
-async def inspire(context: MessageContext, client: Client) -> MessageContext:
+async def inspire(context: MessageContext, client: discord.Client) -> MessageContext:
     logger.info('Sending an inspiring message.')
     response = requests.get('https://inspirobot.me/api?generate=true')
     image = Image.open(requests.get(response.text, stream=True).raw)
@@ -268,7 +263,7 @@ async def inspire(context: MessageContext, client: Client) -> MessageContext:
 
 @daily(at='8:00')
 @command(name='daily_inspiration', hidden=True)
-async def daily_inspiration(context: MessageContext, client: Client) -> MessageContext:
+async def daily_inspiration(context: MessageContext, client: discord.Client) -> MessageContext:
     channel = client.get_channel(getenv('INSPIRATIONAL_MESSAGE_CHANNEL_ID', as_=int))
     await channel.send('Miłego dnia i smacznej kawusi <3')
     await inspire(context=context, client=client)  # type: ignore
@@ -276,7 +271,7 @@ async def daily_inspiration(context: MessageContext, client: Client) -> MessageC
 
 
 @command(name='train_markov', hidden=True)
-async def train_markov(context: MessageContext, client: Client) -> MessageContext:
+async def train_markov(context: MessageContext, client: discord.Client) -> MessageContext:
     i = 1
     async for message in context.message.channel.history(limit=None):
         i += 1
@@ -293,7 +288,7 @@ async def train_markov(context: MessageContext, client: Client) -> MessageContex
 
 
 @command(name='train_carrot', hidden=False)
-async def train_carrot(context: MessageContext, client: Client) -> MessageContext:
+async def train_carrot(context: MessageContext, client: discord.Client) -> MessageContext:
     i = 1
     async for message in context.message.channel.history(limit=None):
         i += 1
@@ -309,7 +304,7 @@ async def train_carrot(context: MessageContext, client: Client) -> MessageContex
 
 
 @command(name='m', hidden=False)
-async def generate_markov2(context: MessageContext, client: Client) -> MessageContext:
+async def generate_markov2(context: MessageContext, client: discord.Client) -> MessageContext:
     try:
         markov_message = context.command.args
         previous_message: Optional[str] = context.command.args[-1]
@@ -343,7 +338,7 @@ async def generate_markov2(context: MessageContext, client: Client) -> MessageCo
 
 
 @command(name='m3', hidden=False)
-async def generate_markov3(context: MessageContext, client: Client) -> MessageContext:
+async def generate_markov3(context: MessageContext, client: discord.Client) -> MessageContext:
     if len(context.command.args) != 0:
         return context.updated(result="Currently command does not take any arguments. Sorry 'bout that.")
 
@@ -411,7 +406,7 @@ def _get_carrot_candidates(db, context: str) -> list[Carrot]:
 
 
 @command(name='carrot', hidden=False)
-async def generate_carrot(context: MessageContext, client: Client) -> MessageContext:
+async def generate_carrot(context: MessageContext, client: discord.Client) -> MessageContext:
     msg_context = context.command.raw_args
 
     with get_db() as db:
@@ -430,7 +425,7 @@ async def generate_carrot(context: MessageContext, client: Client) -> MessageCon
 
 
 @command(name='addcmd', hidden=False, special=True)
-async def add_command(context: MessageContext, client: Client) -> MessageContext:
+async def add_command(context: MessageContext, client: discord.Client) -> MessageContext:
     if len(context.command.args) == 0:
         return context.updated(result=f'Usage: `{client.prefix}updatecmd <command_name>`')
     cmd_name = context.command.args[0]
@@ -449,7 +444,7 @@ async def add_command(context: MessageContext, client: Client) -> MessageContext
 
 
 @command(name='updatecmd', hidden=False, special=True)
-async def update_command(context: MessageContext, client: Client) -> MessageContext:
+async def update_command(context: MessageContext, client: discord.Client) -> MessageContext:
     if len(context.command.args) == 0:
         return context.updated(result=f'Usage: `{client.prefix}updatecmd <command_name>`')
     cmd_name = context.command.args[0]
@@ -469,7 +464,7 @@ async def update_command(context: MessageContext, client: Client) -> MessageCont
 
 
 @command(name='delcmd', hidden=False, special=True)
-async def delete_command(context: MessageContext, client: Client) -> MessageContext:
+async def delete_command(context: MessageContext, client: discord.Client) -> MessageContext:
     if len(context.command.args) != 1:
         return context.updated(result=f'Usage: `{client.prefix}updatecmd <command_name>`')
     cmd_name = context.command.args[0]
@@ -486,7 +481,7 @@ async def delete_command(context: MessageContext, client: Client) -> MessageCont
 
 
 @command(name='showcmd', hidden=False, special=True)
-async def show_command(context: MessageContext, client: Client) -> MessageContext:
+async def show_command(context: MessageContext, client: discord.Client) -> MessageContext:
     if len(context.command.args) != 1:
         return context.updated(result=f'Usage: `{client.prefix}updatecmd <command_name>`')
     cmd_name = context.command.args[0]
@@ -507,7 +502,7 @@ async def show_command(context: MessageContext, client: Client) -> MessageContex
 
 
 @command(name='set', hidden=False, special=True)
-async def set_variable(context: MessageContext, client: Client) -> MessageContext:
+async def set_variable(context: MessageContext, client: discord.Client) -> MessageContext:
     if len(context.command.args) < 2:
         return context.updated(result=f'Usage: `{client.prefix}set <variable_name> <value>`')
     try:
@@ -533,7 +528,7 @@ async def set_variable(context: MessageContext, client: Client) -> MessageContex
         return context.updated(result=str(e))
 
 
-async def generate_markov_at_random_time(context: MessageContext, client: Client) -> None:
+async def generate_markov_at_random_time(context: MessageContext, client: discord.Client) -> None:
     while True:
         await asyncio.sleep(1 * 60)
         with get_db() as db:
@@ -570,7 +565,7 @@ async def generate_markov_at_random_time(context: MessageContext, client: Client
 
 
 @command(name='next_bernardynki', hidden=False, special=True)
-async def next_bernardynki(context: MessageContext, client: Client) -> MessageContext:
+async def next_bernardynki(context: MessageContext, client: discord.Client) -> MessageContext:
     now = pendulum.now(pendulum.UTC)
     first_bernardynki = pendulum.DateTime(2022, 1, 16, tzinfo=pendulum.UTC)
 
@@ -584,14 +579,14 @@ async def next_bernardynki(context: MessageContext, client: Client) -> MessageCo
 
 
 @command(name='suggest', hidden=False, special=False)
-async def suggest(context: MessageContext, client: Client) -> MessageContext:
+async def suggest(context: MessageContext, client: discord.Client) -> MessageContext:
     await context.message.add_reaction('⬆️')
     await context.message.add_reaction('⬇️')
     return context
 
 
 @command(name='yywrap', hidden=False, special=False)
-async def yywrap(context: MessageContext, client: Client) -> MessageContext:
+async def yywrap(context: MessageContext, client: discord.Client) -> MessageContext:
     logger.debug('yy > %s', context.command.raw_args)
     result = interpret(context.command.raw_args)
     logger.debug('yy > %s', result)
