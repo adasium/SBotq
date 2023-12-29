@@ -121,7 +121,8 @@ class Client(discord.Client):
         if is_special_command(message.content, commands=COMMANDS, special_commands=SPECIAL_COMMANDS):
             command = Command.from_str(message.content)
             special_command_context = await COMMANDS[command.name](current_context.updated(command=command), self)
-            return await message.channel.send(special_command_context.result)
+            await message.channel.send(special_command_context.result)
+            return None
 
         try:
             commands = parse_commands(message.content, prefix=self.prefix)
@@ -139,7 +140,8 @@ class Client(discord.Client):
                                 logger.debug('Executing fetched command: [%s|%s]', c.name, c.raw_args)
                                 current_context = await COMMANDS[c.name](current_context.updated(command=c), self)
                             continue
-                    return await message.channel.send(f'Command {command.name} not found')
+                    await message.channel.send(f'Command {command.name} not found')
+                    return None
                 logger.debug('Executing normal command: %s', command.name)
                 command_func = COMMANDS[command.name]
                 current_context = await command_func(current_context.updated(command=command), self)

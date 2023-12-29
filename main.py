@@ -2,7 +2,7 @@ from client import Client
 from getenv import getenv
 
 
-def main() -> None:
+def main() -> int:
     client = Client()
     client.run(getenv('TOKEN'))
     return 0

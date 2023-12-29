@@ -7,6 +7,9 @@ module = [
     'PIL',
 ]
 ignore_missing_imports = true
+disable_error_code = [
+    'method-assign',
+]
 
 [tool.pycodestyle]
 ignore = [
