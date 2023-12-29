@@ -33,9 +33,7 @@ charset-normalizer==2.0.12
 click==8.0.3
     # via pip-tools
 discord-py[voice]==2.3.2
-    # via
-    #   -r requirements.in
-    #   discord-py
+    # via -r requirements.in
 distlib==0.3.3
     # via virtualenv
 filelock==3.3.2
@@ -94,7 +92,7 @@ six==1.16.0
     # via
     #   python-dateutil
     #   virtualenv
-sqlalchemy==2.0.15
+sqlalchemy==2.0.24
     # via -r requirements.in
 tomli==1.2.2
     # via pep517

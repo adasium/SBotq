@@ -25,9 +25,7 @@ charset-normalizer==2.0.7
     #   aiohttp
     #   requests
 discord-py[voice]==2.3.2
-    # via
-    #   -r requirements.in
-    #   discord-py
+    # via -r requirements.in
 frozenlist==1.3.3
     # via
     #   aiohttp
@@ -60,7 +58,7 @@ six==1.16.0
     # via
     #   pynacl
     #   python-dateutil
-sqlalchemy==2.0.15
+sqlalchemy==2.0.24
     # via -r requirements.in
 typing-extensions==4.5.0
     # via sqlalchemy

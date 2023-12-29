@@ -4,4 +4,4 @@ aiohttp==3.8.4
 pendulum==2.1.2
 Pillow==9.0.1
 requests==2.26.0
-SQLAlchemy==2.0.15
+SQLAlchemy==2.0.24
