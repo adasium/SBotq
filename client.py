@@ -1,9 +1,9 @@
 import asyncio
-from datetime import datetime
 from datetime import time
 from datetime import timedelta
 
 import discord
+import pendulum
 from sqlalchemy import select
 
 import monkeypatch
@@ -153,21 +153,26 @@ class Client(discord.Client):
             logger.exception(e)
 
     async def scheduler(self) -> None:
-        now = datetime.now()
+        now = pendulum.now(pendulum.UTC)
         when_should_be_called = {
             command: next_call_timestamp(now, command.scheduled_at, command.scheduled_every)
             for command in self.scheduled_commands
         }
         while True:
+            now = pendulum.now(pendulum.UTC)
             for command in self.scheduled_commands:
-                if when_should_be_called[command] < datetime.now():
+                if when_should_be_called[command] < now:
                     await asyncio.create_task(command(context=None, client=self))
-                    when_should_be_called[command] = next_call_timestamp(datetime.now(), command.scheduled_at, command.scheduled_every)
-            await asyncio.sleep(1)
+                    when_should_be_called[command] = when_should_be_called[command] + command.scheduled_every
+            await asyncio.sleep(0.5)
 
 
-def next_call_timestamp(now: datetime, scheduled_at: time, scheduled_every: timedelta) -> datetime:
-    candidate = datetime(now.year, now.month, now.day, scheduled_at.hour, scheduled_at.minute)
+def next_call_timestamp(
+    now: pendulum.DateTime,
+    scheduled_at: time,
+    scheduled_every: timedelta,
+) -> pendulum.DateTime:
+    candidate = now.replace(hour=scheduled_at.hour, minute=scheduled_at.minute)
     while candidate < now:
         candidate += scheduled_every
     return candidate
