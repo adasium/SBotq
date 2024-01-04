@@ -2,10 +2,12 @@ import asyncio
 import functools
 from datetime import datetime
 from datetime import time
-from datetime import timedelta
+from typing import Callable
 from typing import Optional
 from typing import Tuple
 from typing import Union
+
+import pendulum
 
 from logger import get_logger
 from utils import time_difference
@@ -32,11 +34,14 @@ def delayed(until: Optional[time] = None):
 
 
 def run_every(
+    months: int = 0,
+    days: int = 0,
     hours: int = 0,
     minutes: int = 0,
     at: Union[Tuple[int, int], str, None] = None,
+    condition: Callable[[pendulum.DateTime], bool] | None = None,
 ):
-    t = None
+    t = time(hour=8, minute=0)
     if isinstance(at, tuple):
         t = time(*at)
     elif isinstance(at, str):
@@ -44,8 +49,14 @@ def run_every(
         t = time(h, m)
 
     def run_every__decorator(func):
-        func.scheduled_every = timedelta(hours=hours, minutes=minutes)
+        func.scheduled_every = pendulum.Duration(
+            months=months,
+            days=days,
+            hours=hours,
+            minutes=minutes,
+        )
         func.scheduled_at = t
+        func.condition = condition
         return func
     return run_every__decorator
 

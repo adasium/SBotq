@@ -1,6 +1,5 @@
 import asyncio
 from datetime import time
-from datetime import timedelta
 
 import discord
 import pendulum
@@ -17,6 +16,7 @@ from commands import generate_markov2
 from commands import generate_markov_at_random_time
 from commands import markov2
 from commands import markov3
+from commands import next_bernardynki
 from commands import SPECIAL_COMMANDS
 from database import get_db
 from getenv import getenv
@@ -43,6 +43,7 @@ class Client(discord.Client):
         self.prefix = prefix
         self.scheduled_commands = [
             daily_inspiration,
+            next_bernardynki,
         ]
         self.markov_blacklisted_channel_ids = [
             int(id)
@@ -154,14 +155,19 @@ class Client(discord.Client):
 
     async def scheduler(self) -> None:
         now = pendulum.now(pendulum.UTC)
+        logger.info('scheduler init')
         when_should_be_called = {
             command: next_call_timestamp(now, command.scheduled_at, command.scheduled_every)
             for command in self.scheduled_commands
         }
+        for cmd, t in when_should_be_called.items():
+            logger.info(f'scheduled {cmd} at {t}')
         while True:
             now = pendulum.now(pendulum.UTC)
             for command in self.scheduled_commands:
-                if when_should_be_called[command] < now:
+                is_the_high_time = when_should_be_called[command] < now
+                is_condition_fulfilled = command.condition is None or command.condition(now)
+                if is_the_high_time and is_condition_fulfilled:
                     await asyncio.create_task(command(context=None, client=self))
                     when_should_be_called[command] = when_should_be_called[command] + command.scheduled_every
             await asyncio.sleep(0.5)
@@ -170,7 +176,7 @@ class Client(discord.Client):
 def next_call_timestamp(
     now: pendulum.DateTime,
     scheduled_at: time,
-    scheduled_every: timedelta,
+    scheduled_every: pendulum.Duration,
 ) -> pendulum.DateTime:
     candidate = now.replace(hour=scheduled_at.hour, minute=scheduled_at.minute)
     while candidate < now:

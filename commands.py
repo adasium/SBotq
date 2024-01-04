@@ -26,6 +26,7 @@ from carrotson import CONTEXT_SIZE
 from carrotson import split_into_paths
 from database import get_db
 from decorators import daily
+from decorators import run_every
 from exceptions import DiscordMessageMissingException
 from getenv import getenv
 from logger import get_logger
@@ -565,6 +566,7 @@ async def generate_markov_at_random_time(context: MessageContext, client: discor
                     ).send(markov_message.result)
 
 
+@run_every(months=1, days=1, condition=lambda dt: (Bernardynki.next_after(dt).when - dt).in_days() in (7, 3, 1, 0))
 @command(name='next_bernardynki', hidden=False, special=True)
 async def next_bernardynki(context: MessageContext, client: discord.Client) -> MessageContext:
     now = pendulum.now(pendulum.UTC)
