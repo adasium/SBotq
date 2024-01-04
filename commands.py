@@ -20,6 +20,7 @@ from sqlalchemy import or_
 from sqlalchemy import select
 from sqlalchemy import update
 
+from bernardynki import Bernardynki
 from botka_script.expr import interpret
 from carrotson import CONTEXT_SIZE
 from carrotson import split_into_paths
@@ -567,17 +568,28 @@ async def generate_markov_at_random_time(context: MessageContext, client: discor
 @command(name='next_bernardynki', hidden=False, special=True)
 async def next_bernardynki(context: MessageContext, client: discord.Client) -> MessageContext:
     now = pendulum.now(pendulum.UTC)
-    first_bernardynki = pendulum.DateTime(2022, 1, 16, tzinfo=pendulum.UTC)
-    th_bernardynki = 1
+    year_in_words_mapping = {
+        1: 'pierwszego',
+        2: 'drugiego',
+        3: 'trzeciego',
+        4: 'czwartego',
+        5: 'piątego',
+    }
 
-    next_bernardynki = first_bernardynki
+    next_bernardynki = Bernardynki.first
     while next_bernardynki < now:
-        next_bernardynki = next_bernardynki.add(months=1, days=1)
-        th_bernardynki += 1
+        next_bernardynki += 1
 
-    bernardynki_fmt = next_bernardynki.format('dddd (DD-MM-YYYY)')
-    days = next_bernardynki.diff(now).in_days()
-    return context.updated(result=f'{th_bernardynki}. bernardynki in {days} days on {bernardynki_fmt}')
+    date_fmt = next_bernardynki.when.format('dddd DD.MM.YYYY', locale='pl')
+    days = next_bernardynki.when.diff(now).in_days()
+    year_in_words = year_in_words_mapping[next_bernardynki.year]
+    if days == 0:
+        days_fmt = 'dzisiaj <3'
+    elif days == 1:
+        days_fmt = 'jutro!'
+    else:
+        days_fmt = f'za {days} dni'
+    return context.updated(result=f'{next_bernardynki.ordinal}. bernardynki roku {year_in_words} {days_fmt} ({date_fmt})')
 
 
 @command(name='suggest', hidden=False, special=False)
