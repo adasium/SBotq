@@ -8,6 +8,8 @@ from datetime import timedelta
 from typing import Any
 from typing import Callable
 
+import pendulum
+
 from models import Markov2
 from models import Markov3
 from settings import DEFAULT_PREFIX
@@ -82,3 +84,14 @@ def remove_prefix(text: str, prefix: str) -> str:
 
 def triggered_chance(percentage_chance: float) -> bool:
     return random.random() < percentage_chance
+
+
+def next_call_timestamp(
+    now: pendulum.DateTime,
+    scheduled_at: time,
+    scheduled_every: pendulum.Duration,
+) -> pendulum.DateTime:
+    candidate = now.replace(hour=scheduled_at.hour, minute=scheduled_at.minute)
+    while candidate < now:
+        candidate += scheduled_every
+    return candidate

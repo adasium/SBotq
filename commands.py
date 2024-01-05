@@ -562,7 +562,7 @@ async def generate_markov_at_random_time(context: MessageContext, client: discor
                     if triggered_chance(0.5):
                         markov_message = await scream(markov_message, client=client)
                     await client.get_channel(
-                        id=getenv('RANDOM_MARKOV_MESSAGE_CHANNEL_ID', as_=int),
+                        getenv('RANDOM_MARKOV_MESSAGE_CHANNEL_ID', as_=int),
                     ).send(markov_message.result)
 
 
@@ -591,7 +591,13 @@ async def next_bernardynki(context: MessageContext, client: discord.Client) -> M
         days_fmt = 'jutro!'
     else:
         days_fmt = f'za {days} dni'
-    return context.updated(result=f'{next_bernardynki.ordinal}. bernardynki roku {year_in_words} {days_fmt} ({date_fmt})')
+    msg = f'{next_bernardynki.ordinal}. bernardynki roku {year_in_words} {days_fmt} ({date_fmt})'
+    if context is None:
+        await client.get_channel(
+            getenv('RANDOM_MARKOV_MESSAGE_CHANNEL_ID', as_=int),
+        ).send(msg)
+    else:
+        return context.updated(result=msg)
 
 
 @command(name='suggest', hidden=False, special=False)

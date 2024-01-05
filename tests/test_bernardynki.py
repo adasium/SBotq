@@ -25,3 +25,12 @@ def test_great_bernardynki():
     assert b.when.date() == pendulum.DateTime(2024, 3, 13).date()
     assert b.count == 26
     assert b.great
+
+
+def test_next_after():
+    after = pendulum.DateTime(2024, 3, 12)
+    b = Bernardynki.next_after(after)
+
+    assert b.when.date() == pendulum.DateTime(2024, 3, 13).date()
+    assert b.count == 26
+    assert b.great

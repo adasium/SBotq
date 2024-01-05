@@ -57,7 +57,7 @@ class Bernardynki:
 
     def __eq__(self, other: object) -> Bernardynki:
         if isinstance(other, datetime):
-            return self.when.date == other.when.date
+            return self.when.date == other.date()
         else:
             return NotImplemented
 
@@ -70,3 +70,10 @@ class Bernardynki:
         return Bernardynki(
             when=cls.FIRST_WHEN,
         )
+
+    @classmethod
+    def next_after(cls, dt: pendulum.DateTime) -> Bernardynki:
+        b = cls.first
+        while b <= dt:
+            b += 1
+        return b

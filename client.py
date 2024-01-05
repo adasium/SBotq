@@ -1,5 +1,4 @@
 import asyncio
-from datetime import time
 
 import discord
 import pendulum
@@ -25,6 +24,7 @@ from message_context import MessageContext
 from models import CommandModel
 from models import VariableModel
 from utils import is_special_command
+from utils import next_call_timestamp
 from utils import remove_prefix
 
 
@@ -163,22 +163,15 @@ class Client(discord.Client):
         for cmd, t in when_should_be_called.items():
             logger.info(f'scheduled {cmd} at {t}')
         while True:
-            now = pendulum.now(pendulum.UTC)
-            for command in self.scheduled_commands:
-                is_the_high_time = when_should_be_called[command] < now
-                is_condition_fulfilled = command.condition is None or command.condition(now)
-                if is_the_high_time and is_condition_fulfilled:
-                    await asyncio.create_task(command(context=None, client=self))
-                    when_should_be_called[command] = when_should_be_called[command] + command.scheduled_every
-            await asyncio.sleep(0.5)
-
-
-def next_call_timestamp(
-    now: pendulum.DateTime,
-    scheduled_at: time,
-    scheduled_every: pendulum.Duration,
-) -> pendulum.DateTime:
-    candidate = now.replace(hour=scheduled_at.hour, minute=scheduled_at.minute)
-    while candidate < now:
-        candidate += scheduled_every
-    return candidate
+            try:
+                now = pendulum.now(pendulum.UTC)
+                for command in self.scheduled_commands:
+                    is_the_high_time = when_should_be_called[command] < now
+                    is_condition_fulfilled = command.condition is None or command.condition(now)
+                    # lambda dt: (Bernardynki.next_after(dt).when - dt).in_days()
+                    if is_the_high_time and is_condition_fulfilled:
+                        await asyncio.create_task(command(context=None, client=self))
+                        when_should_be_called[command] = when_should_be_called[command] + command.scheduled_every
+                await asyncio.sleep(0.5)
+            except Exception as e:
+                logger.exception(e)
