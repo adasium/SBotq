@@ -10,6 +10,7 @@ from typing import Optional
 from typing import Protocol
 
 import discord
+import pandas as pd
 import pendulum
 import requests
 from PIL import Image
@@ -20,6 +21,7 @@ from sqlalchemy import or_
 from sqlalchemy import select
 from sqlalchemy import update
 
+import diffle
 from bernardynki import Bernardynki
 from botka_script.expr import interpret
 from carrotson import CONTEXT_SIZE
@@ -613,3 +615,19 @@ async def yywrap(context: MessageContext, client: discord.Client) -> MessageCont
     result = interpret(context.command.raw_args)
     logger.debug('yy > %s', result)
     return context.updated(result=result)
+
+
+@command(name='dfl', hidden=False, special=False)
+async def dfl(context: MessageContext, client: discord.Client) -> MessageContext:
+    guess = context.command.args[0]
+    solver = diffle.Solver(diffle.DICT)
+    solver.guess(guess)
+    matches = solver.get_matches()
+    df = pd.DataFrame(matches, columns=['match'])
+    df.index += 1
+    df_str = df.to_string(header=False, max_rows=10)
+    if len(df.index) == 0:
+        return context.updated(result=f'0 matches')
+    else:
+        match_str = '1 match' if len(df.index) == 1 else f'{len(df.index)} matches'
+        return context.updated(result=f'{match_str}\n```\n{df_str}\n```')

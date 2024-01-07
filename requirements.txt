@@ -40,6 +40,10 @@ multidict==5.2.0
     # via
     #   aiohttp
     #   yarl
+numpy==1.26.3
+    # via pandas
+pandas==2.1.4
+    # via -r requirements.in
 pendulum==2.1.2
     # via -r requirements.in
 pillow==9.0.1
@@ -49,7 +53,11 @@ pycparser==2.21
 pynacl==1.4.0
     # via discord-py
 python-dateutil==2.8.2
-    # via pendulum
+    # via
+    #   pandas
+    #   pendulum
+pytz==2023.3.post1
+    # via pandas
 pytzdata==2020.1
     # via pendulum
 requests==2.26.0
@@ -62,6 +70,8 @@ sqlalchemy==2.0.24
     # via -r requirements.in
 typing-extensions==4.5.0
     # via sqlalchemy
+tzdata==2023.4
+    # via pandas
 urllib3==1.26.7
     # via requests
 yarl==1.9.2
