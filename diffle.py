@@ -11,12 +11,16 @@ from logger import get_logger
 logger = get_logger(__name__)
 
 
+class InvalidSyntaxException(Exception):
+    pass
+
+
 def get_dict() -> list[str]:
     def _inner() -> Generator[str, None, None]:
         with open('assets/pl.dic') as f:
             for line in f:
                 line = line.strip().lower()
-                if len(line) < 2:
+                if len(line) < 2 or len(line) > 17:
                     continue
                 yield line
     return sorted(set(_inner()), key=lambda word: (len(word), word))
@@ -93,6 +97,8 @@ class Solver:
     def get_matches(self, polish: bool = True) -> list[str]:
         local_dict = self._dictionary
         for guess in self._guesses:
+            if not self._validate_parens(guess):
+                raise InvalidSyntaxException('Unmatched parens')
             chunks = self._parse_guessed_word(guess)
             regex = ''.join(chunk.to_regex() for chunk in chunks)
 
@@ -143,6 +149,19 @@ class Solver:
                 new_chunks.append(Chunk(word='', type=ChunkType.EMPTY))
 
         return new_chunks
+
+    def _validate_parens(self, word: str) -> bool:
+        count = 0
+        for char in word:
+            if char in '[(':
+                count += 1
+            if char in ')]':
+                count -= 1
+            if count < 0:
+                return False
+        if count != 0:
+            return False
+        return True
 
 
 DICT = get_dict()

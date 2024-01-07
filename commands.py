@@ -619,15 +619,31 @@ async def yywrap(context: MessageContext, client: discord.Client) -> MessageCont
 
 @command(name='dfl', hidden=False, special=False)
 async def dfl(context: MessageContext, client: discord.Client) -> MessageContext:
+    _help = """\
+```
+jak wpisywać słowa:
+   szary - x
+   żółty - X
+   zielony:
+       pojedyncze litery - (x)
+       sekwencje - (xyz)
+       poprawny początek/koniec słowa - [x)yzx(yz]
+```
+    """
+    if len(context.command.args) == 0:
+        return context.updated(result=_help)
     guess = context.command.args[0]
     solver = diffle.Solver(diffle.DICT)
     solver.guess(guess)
-    matches = solver.get_matches()
+    try:
+        matches = solver.get_matches()
+    except diffle.InvalidSyntaxException as e:
+        return context.updated(result=str(e))
     df = pd.DataFrame(matches, columns=['match'])
     df.index += 1
     df_str = df.to_string(header=False, max_rows=10)
     if len(df.index) == 0:
-        return context.updated(result=f'0 matches')
+        return context.updated(result='0 matches')
     else:
         match_str = '1 match' if len(df.index) == 1 else f'{len(df.index)} matches'
         return context.updated(result=f'{match_str}\n```\n{df_str}\n```')
