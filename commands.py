@@ -29,6 +29,7 @@ from carrotson import split_into_paths
 from database import get_db
 from decorators import daily
 from decorators import run_every
+from difflanek import difflanek
 from exceptions import DiscordMessageMissingException
 from getenv import getenv
 from logger import get_logger
@@ -647,3 +648,24 @@ jak wpisywać słowa:
     else:
         match_str = '1 match' if len(df.index) == 1 else f'{len(df.index)} matches'
         return context.updated(result=f'{match_str}\n```\n{df_str}\n```')
+
+@command(name='difflanek')
+async def _difflanek(context: MessageContext, client: discord.Client) -> MessageContext:
+    message = []
+    if context.command.raw_args:
+
+        params = context.command.raw_args.split(' ')
+        params = [p for p in params if p]
+
+        is_polish_word = params[0] == 'pl'
+        words = params[int(is_polish_word):]
+
+        result = list(filter(lambda x: len(x) >= 3, difflanek.get_valid_words(words, is_polish_word)))
+
+        message.append(f'Ilość pasujących wyników: {len(result)}')
+        message.append('')
+
+        message.append(str(result[:40]))
+    else:
+        message.append('dupa')
+    return context.updated(result='\n'.join(message))
