@@ -4,19 +4,25 @@ from collections import Counter
 
 import numpy as np
 
-def get_valid_words(words: list[str], is_polish_word: bool) -> list[str]:
-    """
-        jak wpisywać słowa:
-           szary - x
-           żółty - X
-           zielony:
-               pojedyncze litery - (x)
-               sekwencje - (xyz)
-               poprawny początek/koniec słowa - [x)yzx(yz]
-    """
+DICT_FILE = 'pl_PL.dic'
+DICT_ENCODING = 'iso-8859-2'
 
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pl_PL.dic')
-    with open(path, encoding='iso-8859-2') as file:
+def get_help() -> str:
+    return """\
+!difflanek [pl] słowo [słowo...]
+
+jak wpisywać słowa:
+    szary - x
+    żółty - X
+    zielony:
+        pojedyncze litery - (x)
+        sekwencje - (xyz)
+        poprawny początek/koniec słowa - [x)yzx(yz]
+"""
+
+def find_solution (words: list[str], is_polish_word: bool) -> list[str]:
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), DICT_FILE)
+    with open(path, encoding=DICT_ENCODING) as file:
         length = int(file.readline()) + 9
         dictionary = np.empty(length, dtype=object)
         for i in range(length):

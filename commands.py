@@ -653,19 +653,23 @@ jak wpisywać słowa:
 async def _difflanek(context: MessageContext, client: discord.Client) -> MessageContext:
     message = []
     if context.command.raw_args:
-
-        params = context.command.raw_args.split(' ')
-        params = [p for p in params if p]
+        params = [p for p in context.command.raw_args.split(' ') if p]
 
         is_polish_word = params[0] == 'pl'
         words = params[int(is_polish_word):]
 
-        result = list(filter(lambda x: len(x) >= 3, difflanek.get_valid_words(words, is_polish_word)))
-
+        result = list(filter(lambda x: len(x) >= 3, difflanek.find_solution(words, is_polish_word)))
         message.append(f'Ilość pasujących wyników: {len(result)}')
         message.append('')
 
-        message.append(str(result[:40]))
+        n = 50
+        if len(result) > n:
+            result = list(set(random.sample(result, n)))
+            result.sort()
+            message.append(f'Przykładowe {n} wyników:')
+            message.append('')
+
+        message.append(str(result))
     else:
-        message.append('dupa')
-    return context.updated(result='\n'.join(message))
+        message.append(difflanek.get_help())
+    return context.updated(result='\n'.join(message)[:2000])
