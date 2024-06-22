@@ -673,3 +673,17 @@ async def _difflanek(context: MessageContext, client: discord.Client) -> Message
     else:
         message.append(difflanek.get_help())
     return context.updated(result='\n'.join(message)[:2000])
+
+
+@command(name='rand')
+async def _rand(context: MessageContext, client: discord.Client) -> MessageContext:
+    default_rand = 4
+
+    if not context.command.raw_args:
+        return context.updated(result=default_rand)
+
+    params = [param for param in context.command.raw_args.split() if param]
+    if not params:
+        return context.updated(result=default_rand)
+
+    return context.updated(result=random.choice(params))
