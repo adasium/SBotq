@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import io
 import random
+import textwrap
 from functools import wraps
 from typing import Awaitable
 from typing import Callable
@@ -613,6 +614,18 @@ async def suggest(context: MessageContext, client: discord.Client) -> MessageCon
 @command(name='yywrap', hidden=False, special=False)
 async def yywrap(context: MessageContext, client: discord.Client) -> MessageContext:
     logger.debug('yy > %s', context.command.raw_args)
+    if not context.command.raw_args:
+        return context.updated(
+            result=textwrap.dedent(f'''
+            ```
+            yywrap - wykonywacz kodu źródłowego
+
+            użycie: {client.prefix}yywrap <SOURCE_CODE>
+
+            przykład: {client.prefix}yywrap 2+2
+            ```'''),
+        )
+
     result = interpret(context.command.raw_args)
     logger.debug('yy > %s', result)
     return context.updated(result=result)
