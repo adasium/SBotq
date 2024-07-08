@@ -7,13 +7,23 @@ from botka_script.tokens import Token
 from botka_script.tokens import TokenType
 
 
+def find_nth(string: str, substring: str, n: int) -> int | None:
+    start = string.find(substring)
+    if start < 0:
+        return None
+    while start >= 0 and n > 1:
+        start = string.find(substring, start=start+len(substring))
+        n -= 1
+    return start
+
+
 @attr.s(auto_attribs=True, kw_only=True)
 class Scanner:
     source: str
     tokens: List[Token] = attr.Factory(list)
     current: int = 0
     start: int = 0
-    line: int = 1
+    line: int = 0
     errors: List[str] = attr.Factory(list)
 
     def scan_tokens(self) -> None:
@@ -22,12 +32,15 @@ class Scanner:
             self.start = self.current
             self._scan_token()
 
+        _end_line = self.source[:self.current].count('\n')
+        _end_column = find_nth(self.source[:self.current], '\n', n=_end_line)
+        if _end_column is None:
+            _end_column = self.current
         self.tokens.append(
-            Token(
+            Token.from_type(
                 type=TokenType.EOF,
-                lexeme='',
-                literal=None,
-                line=self.line,
+                start_line=self.line,
+                start_column=_end_column,
             ),
         )
 
@@ -112,12 +125,25 @@ class Scanner:
 
     def _add_token(self, token_type: TokenType, literal: object = None) -> None:
         text = self.source[self.start:self.current]
+        _start_line = self.source[:self.start].count('\n')
+        _end_line = self.source[:self.current].count('\n')
+
+        _start_column = find_nth(self.source[:self.start], '\n', n=_start_line)
+        if _start_column is None:
+            _start_column = self.start
+
+        _end_column = find_nth(self.source[:self.current], '\n', n=_end_line)
+        if _end_column is None:
+            _end_column = self.current - 1
         self.tokens.append(
-            Token(
+            Token.from_type(
                 type=token_type,
                 lexeme=text,
                 literal=literal,
-                line=self.line,
+                start_line=_start_line,
+                end_line=_end_line,
+                start_column=_start_column,
+                end_column=_end_column,
             ),
         )
 
