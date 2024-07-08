@@ -659,7 +659,7 @@ async def _difflanek(context: MessageContext, client: discord.Client) -> Message
         words = params[int(is_polish_word):]
 
         result = list(filter(lambda x: len(x) >= 3, difflanek.find_solution(words, is_polish_word)))
-        message.append(f'Ilość pasujących wyników: {len(result)}')
+        message.append(f'Liczba pasujących wyników: {len(result)}')
         message.append('')
 
         n = 50
