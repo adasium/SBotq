@@ -12,6 +12,7 @@ DISCORD_MESSAGE_LIMIT = 2000
 MARKOV_MIN_WORD_COUNT = 3
 RANDOM_MARKOV_MESSAGE_CHANCE = 0.0007
 RANDOM_MARKOV_MESSAGE_COUNT = 4
+TOKEN = getenv('TOKEN')
 
 
 logger.info('============================== SETTINGS ==============================')

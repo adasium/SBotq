@@ -1,10 +1,10 @@
+import settings
 from client import Client
-from getenv import getenv
 
 
 def main() -> int:
     client = Client()
-    client.run(getenv('TOKEN'))
+    client.run(settings.TOKEN)
     return 0
 
 
