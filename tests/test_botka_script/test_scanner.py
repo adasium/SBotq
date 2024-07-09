@@ -12,6 +12,7 @@ def test_empty():
             pos='0:0,0:0',
         ),
     ]
+    assert scanner.errors == []
 
 
 def test_addition():
@@ -23,6 +24,7 @@ def test_addition():
         Token.from_type(type=TokenType.INTEGER, lexeme='2', literal=2,    pos='0:2'),
         Token.from_type(type=TokenType.EOF,     lexeme='',  literal=None, pos='0:3'),
     ]
+    assert scanner.errors == []
 
 
 def test_identifier():
@@ -34,3 +36,4 @@ def test_identifier():
         Token.from_type(type=TokenType.IDENTIFIER, lexeme='XD',               pos='0:2,0:3'),
         Token.from_type(type=TokenType.EOF,        lexeme='',   literal=None, pos='0:4'),
     ]
+    assert scanner.errors == []
