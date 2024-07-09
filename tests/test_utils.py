@@ -19,5 +19,4 @@ from utils import next_call_timestamp
 )
 def test_next_call_timestamp(now, scheduled_at, scheduled_every, expected):
     result = next_call_timestamp(now, scheduled_at, scheduled_every)
-    assert False, result
     assert result == expected
