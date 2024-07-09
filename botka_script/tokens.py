@@ -91,7 +91,7 @@ class Token:
             else:
                 start_line, start_column, end_line, end_column = list(map(int, map(str.strip, re.split('[,:]', pos))))
         return cls(
-            type=TokenType.EOF,
+            type=type,
             lexeme=lexeme or '',
             literal=None,
             start_line=start_line,
