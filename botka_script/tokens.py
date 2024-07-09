@@ -93,7 +93,7 @@ class Token:
         return cls(
             type=type,
             lexeme=lexeme or '',
-            literal=None,
+            literal=literal,
             start_line=start_line,
             start_column=start_column,
             end_line=end_line or start_line,

@@ -38,7 +38,7 @@ def test_two_plus_two():
     expr = parser.parse()
     assert parser.errors == []
     assert expr == BinaryExpr(
-        left=LiteralExpr(value=None),
+        left=LiteralExpr(value=2),
         op=tokens[1],
-        right=LiteralExpr(value=None),
+        right=LiteralExpr(value=2),
     )
