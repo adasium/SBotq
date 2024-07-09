@@ -4,13 +4,10 @@ from typing import List
 
 import attr
 
+from botka_script.exceptions import ParseError
 from botka_script.scanner import Scanner
 from botka_script.tokens import Token
 from botka_script.tokens import TokenType
-
-
-class ParseError(Exception):
-    pass
 
 
 
@@ -277,6 +274,9 @@ class Parser:
                 self._advance()
 
     def parse(self) -> Expr:
+        if len(self.tokens) < 1:
+            self.errors.append('expected at least one token')
+            raise ParseError()
         return self._expression()
 
 
