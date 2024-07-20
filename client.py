@@ -22,7 +22,6 @@ from getenv import getenv
 from logger import get_logger
 from message_context import MessageContext
 from models import CommandModel
-from models import VariableModel
 from utils import is_special_command
 from utils import next_call_timestamp
 from utils import remove_prefix
@@ -32,6 +31,43 @@ logger = get_logger(__name__)
 
 
 discord.gateway.KeepAliveHandler.run = monkeypatch.run
+
+
+class MsgCtx:
+    def __init__(self, client: discord.Client, message: discord.Message) -> None:
+        self.client = client
+        self.message = message
+
+    @property
+    def is_mentioned_directly(self) -> bool:
+        return self.client.user.mentioned_in(self.message)
+
+    @property
+    def is_mentioned_via_role(self) -> bool:
+        return set(self.message.guild.me.roles).intersection(set(self.message.role_mentions))
+
+    @property
+    def is_mentioned(self) -> bool:
+        return self.is_mentioned_directly or self.is_mentioned_via_role
+
+    @property
+    def is_command(self) -> bool:
+        return self.message.content.startswith(self.client.prefix)
+
+    @property
+    def is_beta_command(self) -> bool:
+        return self.message.content.startswith(settings.BETA_PREFIX)
+
+    @property
+    def _is_commandlike(self) -> bool:
+        return self.message.content.startswith(settings.COMMON_PREFIXES)
+
+    @property
+    def should_markovify(self) -> bool:
+        return (
+            not self._is_commandlike
+            and self.message.channel.id not in self.client.markov_blacklisted_channel_ids
+        )
 
 
 class Client(discord.Client):
@@ -84,48 +120,49 @@ class Client(discord.Client):
 
     async def on_message(self, message: discord.Message) -> None:
         logger.debug('[%s > %s] %s: %s', message.guild.name, message.channel.name, message.author, message.content)
-        if message.author == self.user:
-            return
 
-        current_context = MessageContext(discord_message=message, result='', command=Command.dummy())
+        if self._is_self_message(message):
+            return None
 
-        is_mentioned_directly = self.user.mentioned_in(message)
-        is_mentioned_via_role = set(message.guild.me.roles).intersection(set(message.role_mentions))
-        if is_mentioned_directly or is_mentioned_via_role:
-            if message.content == '<@!%s>' % self.user.id:
-                mention_msg = 'sup'
-                with get_db() as db:
-                    fetched_mention_msg = db.execute(
-                        select(VariableModel)
-                        .where(VariableModel.name == 'MENTION_GREETING'),
-                    ).scalar_one_or_none()
-                    if fetched_mention_msg is not None:
-                        mention_msg = fetched_mention_msg.value
-                await message.channel.send(f' {mention_msg}')
-            else:
-                generated_markov = (await generate_markov2(current_context, self)).result
-                await message.channel.send(generated_markov)
-            return
+        _message_context = self._build_message_context(message)
 
-        if not message.content.startswith(settings.COMMON_PREFIXES) and message.channel.id not in self.markov_blacklisted_channel_ids:
+        if _message_context.is_beta_command:
+            logger.debug('[client] beta command')
+            self._handle_command(_message_context)
+            return None
+
+        if _message_context.is_mentioned:
+            logger.debug('[client] mention')
+            current_context = MessageContext(discord_message=message, result='', command=Command.dummy())
+            generated_markov = await generate_markov2(current_context, self).result
+            await message.channel.send(generated_markov)
+            return None
+
+        if _message_context.should_markovify:
+            logger.debug('[client] markovifying')
+            current_context = MessageContext(discord_message=message, result='', command=Command.dummy())
             await markov2(current_context, self)
             await markov3(current_context, self)
             await carrot(current_context, self)
-            return
+            return None
 
-        if not message.content.startswith(self.prefix):
-            return
+        if not _message_context.is_command:
+            return None
 
         if len(remove_prefix(text=message.content, prefix=self.prefix)) == 0:
-            return
+            return None
 
         if is_special_command(message.content, commands=COMMANDS, special_commands=SPECIAL_COMMANDS):
+            logger.debug('[client] special command')
+            current_context = MessageContext(discord_message=message, result='', command=Command.dummy())
             command = Command.from_str(message.content)
             special_command_context = await COMMANDS[command.name](current_context.updated(command=command), self)
             await message.channel.send(special_command_context.result)
             return None
 
         try:
+            logger.debug('[client] other command')
+            current_context = MessageContext(discord_message=message, result='', command=Command.dummy())
             commands = parse_commands(message.content, prefix=self.prefix)
             logger.debug('parsed commands %s', commands)
             for command in commands:
@@ -175,3 +212,15 @@ class Client(discord.Client):
                 await asyncio.sleep(0.5)
             except Exception as e:
                 logger.exception(e)
+
+    def _is_self_message(self, message: discord.Message) -> bool:
+        return message.author == self.user
+
+    def _build_message_context(self, message: discord.Message) -> MsgCtx:
+        return MsgCtx(
+            client=self,
+            message=message,
+        )
+
+    def _handle_command(self, message_context: MsgCtx) -> None:
+        pass

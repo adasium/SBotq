@@ -52,13 +52,6 @@ class Scanner:
         one_char_tokens = {
             '(': TokenType.LEFT_PAREN,
             ')': TokenType.RIGHT_PAREN,
-            '{': TokenType.LEFT_BRACE,
-            '}': TokenType.RIGHT_BRACE,
-            ',': TokenType.COMMA,
-            '-': TokenType.MINUS,
-            '+': TokenType.PLUS,
-            ';': TokenType.SEMICOLON,
-            '*': TokenType.ASTERISK,
         }
         if c in one_char_tokens:
             self._add_token(one_char_tokens[c])
@@ -111,9 +104,8 @@ class Scanner:
             self._scan_number()
             return None
 
-        if c.isalpha():
-            self._scan_identifier()
-            return None
+        self._scan_symbol()
+        return None
 
         self.errors.append(f'Unexpected character: `{c}`')
         raise ScannerError
@@ -197,30 +189,37 @@ class Scanner:
             return '\0'
         return self.source[self.current + 1]
 
-    def _scan_identifier(self) -> None:
-        while self._peek().isalnum():
-            self._advance()
+    def _scan_symbol(self) -> None:
+        special_characters = '() \n'
+        while True:
+            if self.is_at_end():
+                break
+            char = self._peek()
+            if char not in special_characters:
+                self._advance()
+            else:
+                break
 
         value = self.source[self.start:self.current]
         keywords = {
-            'AND': TokenType.AND,
-            'CLASS': TokenType.CLASS,
-            'ELSE': TokenType.ELSE,
-            'FALSE': TokenType.FALSE,
-            'FUN': TokenType.FUN,
-            'FOR': TokenType.FOR,
-            'IF': TokenType.IF,
-            'NIL': TokenType.NIL,
-            'OR': TokenType.OR,
-            'PRINT': TokenType.PRINT,
-            'RETURN': TokenType.RETURN,
-            'SUPER': TokenType.SUPER,
-            'THIS': TokenType.THIS,
-            'TRUE': TokenType.TRUE,
-            'VAR': TokenType.VAR,
-            'WHILE': TokenType.WHILE,
+            TokenType.AND.value: TokenType.AND,
+            TokenType.CLASS.value: TokenType.CLASS,
+            TokenType.ELSE.value: TokenType.ELSE,
+            TokenType.FALSE.value: TokenType.FALSE,
+            TokenType.FUN.value: TokenType.FUN,
+            TokenType.FOR.value: TokenType.FOR,
+            TokenType.IF.value: TokenType.IF,
+            TokenType.NIL.value: TokenType.NIL,
+            TokenType.OR.value: TokenType.OR,
+            TokenType.PRINT.value: TokenType.PRINT,
+            TokenType.RETURN.value: TokenType.RETURN,
+            TokenType.SUPER.value: TokenType.SUPER,
+            TokenType.THIS.value: TokenType.THIS,
+            TokenType.TRUE.value: TokenType.TRUE,
+            TokenType.VAR.value: TokenType.VAR,
+            TokenType.WHILE.value: TokenType.WHILE,
         }
-        token_type = keywords.get(value, TokenType.IDENTIFIER)
+        token_type = keywords.get(value, TokenType.SYMBOL)
         self._add_token(token_type)
 
 

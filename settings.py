@@ -6,7 +6,9 @@ logger = get_logger('settings')
 
 
 DEFAULT_PREFIX = getenv('PREFIX', default='!')
-COMMON_PREFIXES = ('!', '$')
+COMMON_PREFIXES = ('!', '$', ';')
+BETA_PREFIX = ';'
+
 DB_URI = 'sqlite:///sbotq.db'
 DISCORD_MESSAGE_LIMIT = 2000
 MARKOV_MIN_WORD_COUNT = 3

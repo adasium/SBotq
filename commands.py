@@ -24,7 +24,7 @@ from sqlalchemy import update
 
 import diffle
 from bernardynki import Bernardynki
-from botka_script.expr import interpret
+from botka_script.utils import interpret_source
 from carrotson import CONTEXT_SIZE
 from carrotson import split_into_paths
 from database import get_db
@@ -622,13 +622,19 @@ async def yywrap(context: MessageContext, client: discord.Client) -> MessageCont
 
             użycie: {client.prefix}yywrap <SOURCE_CODE>
 
-            przykład: {client.prefix}yywrap 2+2
+            przykład: {client.prefix}yywrap (message "XD")
+            przykład: {client.prefix}yywrap (message (2+2))
             ```'''),
         )
 
-    result = interpret(context.command.raw_args)
+    result = interpret_source(context.command.raw_args)
     logger.debug('yy > %s', result)
-    return context.updated(result=result)
+    if result.success:
+        await context.message.add_reaction('✔️')
+        return context.updated(result=result.stdout)
+    else:
+        await context.message.add_reaction('❌')
+        return context.updated(result=result.stderr)
 
 
 @command(name='dfl', hidden=False, special=False)

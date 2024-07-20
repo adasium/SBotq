@@ -46,10 +46,14 @@ def load_env_file(path: str = '.env') -> None:
     try:
         with open(path) as f:
             for line in f:
+                if not line.strip():
+                    continue
                 if line.startswith(ENV_FILE_COMMENT):
                     continue
                 key, value = [item.strip() for item in line.split('=', maxsplit=1)]
                 os.environ[key] = value
+    except ValueError as e:
+        raise ValueError(line)
     except IOError as e:
         print(e)
 

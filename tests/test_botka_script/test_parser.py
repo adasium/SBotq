@@ -1,9 +1,10 @@
 import pytest
 
 from botka_script.exceptions import ParseError
-from botka_script.expr import BinaryExpr
+from botka_script.expr import FunExpr
 from botka_script.expr import LiteralExpr
 from botka_script.expr import Parser
+from botka_script.scanner import Scanner
 from botka_script.tokens import Token
 from botka_script.tokens import TokenType
 
@@ -28,17 +29,33 @@ def test_eof():
 
 
 def test_two_plus_two():
-    tokens = [
-        Token.from_type(type=TokenType.INTEGER, lexeme='2', literal=2,    pos='0:0'),
-        Token.from_type(type=TokenType.PLUS,    lexeme='+',               pos='0:1'),
-        Token.from_type(type=TokenType.INTEGER, lexeme='2', literal=2,    pos='0:2'),
-        Token.from_type(type=TokenType.EOF,     lexeme='',  literal=None, pos='0:3'),
-    ]
-    parser = Parser(tokens=tokens)
+    scanner = Scanner(source='(+ 2 2)')
+    scanner.scan_tokens()
+    parser = Parser(tokens=scanner.tokens)
+
     expr = parser.parse()
+
     assert parser.errors == []
-    assert expr == BinaryExpr(
-        left=LiteralExpr(value=2),
-        op=tokens[1],
-        right=LiteralExpr(value=2),
+    assert expr == FunExpr(
+        op=Token.from_type(TokenType.SYMBOL, lexeme='+', pos='0:1'),
+        args=[
+            LiteralExpr(value=2),
+            LiteralExpr(value=2),
+        ],
+    )
+
+
+def test_message():
+    scanner = Scanner(source='(message "2 2")')
+    scanner.scan_tokens()
+    parser = Parser(tokens=scanner.tokens)
+
+    expr = parser.parse()
+
+    assert parser.errors == []
+    assert expr == FunExpr(
+        op=Token.from_type(TokenType.SYMBOL, lexeme='message', pos='0:1,0:7'),
+        args=[
+            LiteralExpr(value='2 2'),
+        ],
     )
