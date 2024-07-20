@@ -24,24 +24,52 @@ class Interpreter(Visitor):
         return expr.accept(self)
 
     def visit_FunExpr(self, expr: DefunExpr):
-        builtin = [
-            '+',
-            'message',
-        ]
+        def divide(args):
+            first, *rest = args
+            for r in rest:
+                first /= r
+            return first
+
+        def multiply(args):
+            first, *rest = args
+            for r in rest:
+                first *= r
+            return first
+
+        def subtract(args):
+            first, *rest = args
+            for r in rest:
+                first -= r
+            return first
+
+
+        _MISSING = object()
+
+        builtin = {
+            '+': sum,
+            '-': subtract,
+            '*': multiply,
+            '/': divide,
+            'message': None,
+        }
         op = expr.op.lexeme
-        if op not in builtin:
+        fun = builtin.get(op, _MISSING)
+
+        if fun is _MISSING:
+            # TODO@adasium: custom functions
             raise NotImplementedError
 
-        if op == '+':
-            return sum(
+        if fun is not None:
+            return fun(
                 self._evaluate(arg)
                 for arg in expr.args
             )
-        if op == 'message':
-            for arg in expr.args:
-                self.stdout += str(self._evaluate(arg))
-            return None
-        assert False, 'unreachable'
+        else:
+            if op == 'message':
+                for arg in expr.args:
+                    self.stdout += str(self._evaluate(arg))
+                return None
+            assert False, 'unreachable'
 
     def visit_BinaryExpr(self, expr: BinaryExpr):
         left = self._evaluate(expr.left)
