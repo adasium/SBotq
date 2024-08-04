@@ -5,3 +5,7 @@ class ScannerError(Exception):
 
 class ParseError(Exception):
     pass
+
+
+class InterpreterError(Exception):
+    pass

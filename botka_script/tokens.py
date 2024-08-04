@@ -30,7 +30,8 @@ class TokenType(Enum):
     LESS_EQUAL = '<='
 
     # Literals.
-    SYMBOL = 'symbol'
+    IDENTIFIER = 'IDENTIFIER'
+    SYMBOL = 'SYMBOL'
     STRING = 'STRING'
     NUMBER = 'NUMBER'
     INTEGER = 'INTEGER'
@@ -40,7 +41,7 @@ class TokenType(Enum):
     CLASS = 'CLASS'
     ELSE = 'ELSE'
     FALSE = 'f'
-    FUN = 'defun'
+    DEFUN = 'defun'
     FOR = 'FOR'
     IF = 'IF'
     NIL = 'nil'
@@ -55,6 +56,9 @@ class TokenType(Enum):
 
     EOF = 'EOF'
 
+    def __repr__(self) -> str:
+        return self._name_
+
 
 @attr.s(auto_attribs=True, kw_only=True)
 class Token:
@@ -65,6 +69,9 @@ class Token:
     start_column: int
     end_line: int
     end_column: int
+
+    def __repr__(self) -> str:
+        return f'{self.type._name_} [{self.start_line}:{self.start_column},{self.end_line}:{self.end_column}]'
 
     @classmethod
     def from_type(

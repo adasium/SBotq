@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import List
 from typing import NamedTuple
 
 from settings import DEFAULT_PREFIX
@@ -33,8 +32,3 @@ class Command(NamedTuple):
             raw_args='',
             args=[],
         )
-
-
-def parse_commands(message: str, prefix: str = DEFAULT_PREFIX) -> List[Command]:
-    parts = [p.strip() for p in message.split(' | ')]
-    return [Command.from_str(part) for part in parts]

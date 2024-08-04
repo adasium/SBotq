@@ -27,10 +27,12 @@ from bernardynki import Bernardynki
 from botka_script.utils import interpret_source
 from carrotson import CONTEXT_SIZE
 from carrotson import split_into_paths
+from command import Command
 from database import get_db
 from decorators import daily
 from decorators import run_every
 from difflanek import difflanek
+from exceptions import CommandNotFound
 from exceptions import DiscordMessageMissingException
 from getenv import getenv
 from logger import get_logger
@@ -41,6 +43,7 @@ from models import Markov2
 from models import Markov3
 from models import VariableModel
 from settings import COMMON_PREFIXES
+from settings import DEFAULT_PREFIX
 from settings import DISCORD_MESSAGE_LIMIT
 from settings import MARKOV_MIN_WORD_COUNT
 from settings import RANDOM_MARKOV_MESSAGE_CHANCE
@@ -61,6 +64,50 @@ logger = get_logger(__name__)
 COMMANDS = {}
 HIDDEN_COMMANDS = {}
 SPECIAL_COMMANDS = {}
+
+
+def parse_pipe(message: str, prefix: str = DEFAULT_PREFIX) -> list[Command]:
+    ret = []
+    cmds = _parse_commands(message, prefix)
+    for cmd in cmds:
+        if get_builtin_command(cmd.name):
+            ret.append(cmd)
+            continue
+
+        custom_cmd = get_custom_command(cmd.name)
+        if custom_cmd is None:
+            raise CommandNotFound(cmd.name)
+
+        ret.extend(parse_pipe(custom_cmd.command, prefix))
+    return ret
+
+
+def _parse_commands(message: str, prefix: str = DEFAULT_PREFIX) -> List[Command]:
+    parts = [p.strip() for p in message.split(' | ')]
+    commands = [Command.from_str(part, prefix) for part in parts]
+    return commands
+
+
+def get_builtin_command(cmd_name: str) -> CommandFunc | None:
+    return COMMANDS.get(cmd_name)
+
+
+def get_custom_command(cmd_name: str) -> CommandModel | None:
+    with get_db() as db:
+        command = db.execute(
+            select(CommandModel)
+            .where(CommandModel.name == cmd_name),
+        ).scalar_one_or_none()
+    return command
+
+
+def get_command(cmd_name: str) -> CommandFunc | CommandModel | None:
+    cmd = get_builtin_command(cmd_name)
+    if cmd is None:
+        cmd = get_custom_command(cmd_name)
+    if cmd is None:
+        return None
+    return cmd
 
 
 def command(*, name: str, hidden: bool = False, special: bool = False) -> Callable[[CommandFunc], CommandFunc]:
@@ -252,7 +299,7 @@ async def carrot(context: MessageContext, client: discord.Client) -> MessageCont
     return context
 
 
-@command(name='inspire', hidden=False)
+@command(name='inspire')
 async def inspire(context: MessageContext, client: discord.Client) -> MessageContext:
     logger.info('Sending an inspiring message.')
     response = requests.get('https://inspirobot.me/api?generate=true')
@@ -293,7 +340,7 @@ async def train_markov(context: MessageContext, client: discord.Client) -> Messa
     return context
 
 
-@command(name='train_carrot', hidden=False)
+@command(name='train_carrot')
 async def train_carrot(context: MessageContext, client: discord.Client) -> MessageContext:
     i = 1
     async for message in context.message.channel.history(limit=None):
@@ -309,7 +356,7 @@ async def train_carrot(context: MessageContext, client: discord.Client) -> Messa
     return context
 
 
-@command(name='m', hidden=False)
+@command(name='m')
 async def generate_markov2(context: MessageContext, client: discord.Client) -> MessageContext:
     try:
         markov_message = context.command.args
@@ -343,7 +390,7 @@ async def generate_markov2(context: MessageContext, client: discord.Client) -> M
     return context.updated(result=context.result + ' ' + ' '.join(markov_message))
 
 
-@command(name='m3', hidden=False)
+@command(name='m3')
 async def generate_markov3(context: MessageContext, client: discord.Client) -> MessageContext:
     if len(context.command.args) != 0:
         return context.updated(result="Currently command does not take any arguments. Sorry 'bout that.")
@@ -411,7 +458,7 @@ def _get_carrot_candidates(db, context: str) -> list[Carrot]:
     return candidates
 
 
-@command(name='carrot', hidden=False)
+@command(name='carrot')
 async def generate_carrot(context: MessageContext, client: discord.Client) -> MessageContext:
     msg_context = context.command.raw_args
 
@@ -430,7 +477,7 @@ async def generate_carrot(context: MessageContext, client: discord.Client) -> Me
     return context.updated(result=msg_context)
 
 
-@command(name='addcmd', hidden=False, special=True)
+@command(name='addcmd', special=True)
 async def add_command(context: MessageContext, client: discord.Client) -> MessageContext:
     if len(context.command.args) == 0:
         return context.updated(result=f'Usage: `{client.prefix}updatecmd <command_name>`')
@@ -449,7 +496,7 @@ async def add_command(context: MessageContext, client: discord.Client) -> Messag
     return context.updated(result=f'Command `{cmd_name}` added')
 
 
-@command(name='updatecmd', hidden=False, special=True)
+@command(name='updatecmd', special=True)
 async def update_command(context: MessageContext, client: discord.Client) -> MessageContext:
     if len(context.command.args) == 0:
         return context.updated(result=f'Usage: `{client.prefix}updatecmd <command_name>`')
@@ -469,7 +516,7 @@ async def update_command(context: MessageContext, client: discord.Client) -> Mes
     return context.updated(result=f'Command `{cmd_name}` updated')
 
 
-@command(name='delcmd', hidden=False, special=True)
+@command(name='delcmd', special=True)
 async def delete_command(context: MessageContext, client: discord.Client) -> MessageContext:
     if len(context.command.args) != 1:
         return context.updated(result=f'Usage: `{client.prefix}updatecmd <command_name>`')
@@ -486,7 +533,7 @@ async def delete_command(context: MessageContext, client: discord.Client) -> Mes
     return context.updated(result=f'Command `{cmd_name}` deleted')
 
 
-@command(name='showcmd', hidden=False, special=True)
+@command(name='showcmd', special=True)
 async def show_command(context: MessageContext, client: discord.Client) -> MessageContext:
     if len(context.command.args) != 1:
         return context.updated(result=f'Usage: `{client.prefix}updatecmd <command_name>`')
@@ -507,7 +554,7 @@ async def show_command(context: MessageContext, client: discord.Client) -> Messa
         return context.updated(result=str(e))
 
 
-@command(name='set', hidden=False, special=True)
+@command(name='set', special=True)
 async def set_variable(context: MessageContext, client: discord.Client) -> MessageContext:
     if len(context.command.args) < 2:
         return context.updated(result=f'Usage: `{client.prefix}set <variable_name> <value>`')
@@ -571,7 +618,7 @@ async def generate_markov_at_random_time(context: MessageContext, client: discor
 
 
 @run_every(months=1, days=1, condition=lambda dt: (Bernardynki.next_after(dt).when - dt).in_days() in (7, 3, 1, 0))
-@command(name='next_bernardynki', hidden=False, special=True)
+@command(name='next_bernardynki', special=True)
 async def next_bernardynki(context: MessageContext, client: discord.Client) -> MessageContext:
     now = pendulum.now(pendulum.UTC)
     year_in_words_mapping = {
@@ -604,14 +651,14 @@ async def next_bernardynki(context: MessageContext, client: discord.Client) -> M
         return context.updated(result=msg)
 
 
-@command(name='suggest', hidden=False, special=False)
+@command(name='suggest')
 async def suggest(context: MessageContext, client: discord.Client) -> MessageContext:
     await context.message.add_reaction('⬆️')
     await context.message.add_reaction('⬇️')
     return context
 
 
-@command(name='yywrap', hidden=False, special=False)
+@command(name='yywrap')
 async def yywrap(context: MessageContext, client: discord.Client) -> MessageContext:
     logger.debug('yy > %s', context.command.raw_args)
     if not context.command.raw_args:
@@ -627,7 +674,17 @@ async def yywrap(context: MessageContext, client: discord.Client) -> MessageCont
             ```'''),
         )
 
-    result = interpret_source(context.command.raw_args)
+    extra = {
+        'current_message_context': context.result,
+    }
+    if context.message.reference is not None:
+        referenced_message = await context.message.channel.fetch_message(context.message.reference.message_id)
+        extra['referenced_message'] = referenced_message.content
+    result = interpret_source(
+        context.command.raw_args,
+        **extra,
+        exc=Exception,
+    )
     logger.debug('yy > %s', result)
     if result.success:
         await context.message.add_reaction('✔️')
@@ -637,7 +694,7 @@ async def yywrap(context: MessageContext, client: discord.Client) -> MessageCont
         return context.updated(result=result.stderr)
 
 
-@command(name='dfl', hidden=False, special=False)
+@command(name='dfl')
 async def dfl(context: MessageContext, client: discord.Client) -> MessageContext:
     _help = """\
 ```

@@ -2,27 +2,22 @@ import asyncio
 
 import discord
 import pendulum
-from sqlalchemy import select
 
 import monkeypatch
 import settings
 from command import Command
-from command import parse_commands
 from commands import carrot
-from commands import COMMANDS
 from commands import daily_inspiration
 from commands import generate_markov2
 from commands import generate_markov_at_random_time
+from commands import get_builtin_command
 from commands import markov2
 from commands import markov3
 from commands import next_bernardynki
-from commands import SPECIAL_COMMANDS
-from database import get_db
+from commands import parse_pipe
 from getenv import getenv
 from logger import get_logger
 from message_context import MessageContext
-from models import CommandModel
-from utils import is_special_command
 from utils import next_call_timestamp
 from utils import remove_prefix
 
@@ -126,11 +121,6 @@ class Client(discord.Client):
 
         _message_context = self._build_message_context(message)
 
-        if _message_context.is_beta_command:
-            logger.debug('[client] beta command')
-            self._handle_command(_message_context)
-            return None
-
         if _message_context.is_mentioned:
             logger.debug('[client] mention')
             current_context = MessageContext(discord_message=message, result='', command=Command.dummy())
@@ -152,43 +142,13 @@ class Client(discord.Client):
         if len(remove_prefix(text=message.content, prefix=self.prefix)) == 0:
             return None
 
-        if is_special_command(message.content, commands=COMMANDS, special_commands=SPECIAL_COMMANDS):
-            logger.debug('[client] special command')
-            current_context = MessageContext(discord_message=message, result='', command=Command.dummy())
-            command = Command.from_str(message.content)
-            special_command_context = await COMMANDS[command.name](current_context.updated(command=command), self)
-            await message.channel.send(special_command_context.result)
-            return None
-
-        try:
-            logger.debug('[client] other command')
-            current_context = MessageContext(discord_message=message, result='', command=Command.dummy())
-            commands = parse_commands(message.content, prefix=self.prefix)
-            logger.debug('parsed commands %s', commands)
-            for command in commands:
-                if command.name not in COMMANDS:
-                    with get_db() as db:
-                        fetched_command = db.execute(
-                            select(CommandModel)
-                            .where(CommandModel.name == command.name),
-                        ).scalar_one_or_none()
-                        if fetched_command is not None:
-                            logger.debug('Fetched command: [%s|%s]', fetched_command.name, fetched_command.command)
-                            for c in parse_commands(fetched_command.command):
-                                logger.debug('Executing fetched command: [%s|%s]', c.name, c.raw_args)
-                                current_context = await COMMANDS[c.name](current_context.updated(command=c), self)
-                            continue
-                    await message.channel.send(f'Command {command.name} not found')
-                    return None
-                logger.debug('Executing normal command: %s', command.name)
-                command_func = COMMANDS[command.name]
-                current_context = await command_func(current_context.updated(command=command), self)
-
-            logger.debug('Final result of %s: %s', message.content, current_context.result)
-            if current_context.result:
-                await message.channel.send(current_context.result)
-        except ValueError as e:
-            logger.exception(e)
+        pipe = parse_pipe(message.content, prefix=self.prefix)
+        current_context = MessageContext(message)
+        for command in pipe:
+            cmd_func = get_builtin_command(command.name)
+            current_context = await cmd_func(current_context.updated(command=command), self)
+        if len(current_context.result.strip()) > 0:
+            return await message.channel.send(current_context.result)
 
     async def scheduler(self) -> None:
         now = pendulum.now(pendulum.UTC)
@@ -221,6 +181,3 @@ class Client(discord.Client):
             client=self,
             message=message,
         )
-
-    def _handle_command(self, message_context: MsgCtx) -> None:
-        pass

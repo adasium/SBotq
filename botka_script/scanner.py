@@ -12,7 +12,7 @@ def find_nth(string: str, substring: str, n: int) -> int | None:
     if start < 0:
         return None
     while start >= 0 and n > 1:
-        start = string.find(substring, start=start+len(substring))
+        start = string.find(substring, start+len(substring))
         n -= 1
     return start
 
@@ -117,23 +117,22 @@ class Scanner:
 
     def _add_token(self, token_type: TokenType, literal: object = None) -> None:
         text = self.source[self.start:self.current]
-        _start_line = self.source[:self.start].count('\n')
-        _end_line = self.source[:self.current].count('\n')
+        _start_newline_count = self.source[:self.start].count('\n')
+        _end_newline_count = self.source[:self.current].count('\n')
 
-        _start_column = find_nth(self.source[:self.start], '\n', n=_start_line)
-        if _start_column is None:
-            _start_column = self.start
+        _start_newline_index = find_nth(self.source[:self.start], '\n', n=_start_newline_count) or 0
 
-        _end_column = find_nth(self.source[:self.current], '\n', n=_end_line)
-        if _end_column is None:
-            _end_column = self.current - 1
+        _end_newline_index = find_nth(self.source[:self.current], '\n', n=_end_newline_count) or 0
+
+        _start_column = self.start - _start_newline_index
+        _end_column = self.current - _end_newline_index - 1
         self.tokens.append(
             Token.from_type(
                 type=token_type,
                 lexeme=text,
                 literal=literal,
-                start_line=_start_line,
-                end_line=_end_line,
+                start_line=_start_newline_count,
+                end_line=_end_newline_count,
                 start_column=_start_column,
                 end_column=_end_column,
             ),
@@ -206,7 +205,7 @@ class Scanner:
             TokenType.CLASS.value: TokenType.CLASS,
             TokenType.ELSE.value: TokenType.ELSE,
             TokenType.FALSE.value: TokenType.FALSE,
-            TokenType.FUN.value: TokenType.FUN,
+            TokenType.DEFUN.value: TokenType.DEFUN,
             TokenType.FOR.value: TokenType.FOR,
             TokenType.IF.value: TokenType.IF,
             TokenType.NIL.value: TokenType.NIL,
@@ -219,7 +218,12 @@ class Scanner:
             TokenType.VAR.value: TokenType.VAR,
             TokenType.WHILE.value: TokenType.WHILE,
         }
-        token_type = keywords.get(value, TokenType.SYMBOL)
+        token_type = keywords.get(value)
+        if token_type is None:
+            if value.startswith("'"):
+                token_type = TokenType.SYMBOL
+            else:
+                token_type = TokenType.IDENTIFIER
         self._add_token(token_type)
 
 
