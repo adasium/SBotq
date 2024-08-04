@@ -7,7 +7,6 @@ import monkeypatch
 import settings
 from command import Command
 from commands import carrot
-from commands import daily_inspiration
 from commands import generate_markov2
 from commands import generate_markov_at_random_time
 from commands import get_builtin_command
@@ -73,7 +72,7 @@ class Client(discord.Client):
 
         self.prefix = prefix
         self.scheduled_commands = [
-            daily_inspiration,
+            #daily_inspiration,
             next_bernardynki,
         ]
         self.markov_blacklisted_channel_ids = [
