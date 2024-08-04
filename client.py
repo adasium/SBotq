@@ -143,11 +143,14 @@ class Client(discord.Client):
 
         pipe = parse_pipe(message.content, prefix=self.prefix)
         current_context = MessageContext(message)
-        for command in pipe:
-            cmd_func = get_builtin_command(command.name)
-            current_context = await cmd_func(current_context.updated(command=command), self)
-        if len(current_context.result.strip()) > 0:
-            return await message.channel.send(current_context.result)
+        try:
+            for command in pipe:
+                cmd_func = get_builtin_command(command.name)
+                current_context = await cmd_func(current_context.updated(command=command), self)
+            if len(current_context.result.strip()) > 0:
+                return await message.channel.send(current_context.result)
+        except Exception as e:
+            return await message.channel.send(str(e))
 
     async def scheduler(self) -> None:
         now = pendulum.now(pendulum.UTC)
