@@ -727,28 +727,24 @@ jak wpisywać słowa:
 
 @command(name='difflanek')
 async def _difflanek(context: MessageContext, client: discord.Client) -> MessageContext:
-    message = []
     if context.command.raw_args:
         params = [p for p in context.command.raw_args.split(' ') if p]
 
         is_polish_word = params[0] == 'pl'
         words = params[int(is_polish_word):]
 
-        result = list(filter(lambda x: len(x) >= 3, difflanek.find_solution(words, is_polish_word)))
-        message.append(f'Liczba pasujących wyników: {len(result)}')
-        message.append('')
-
+        result_all = list(filter(lambda x: len(x) >= 3, difflanek.find_solution(words, is_polish_word)))
         n = 50
-        if len(result) > n:
-            result = list(set(random.sample(result, n)))
+        if len(result_all) > n:
+            result = list(set(random.sample(result_all, n)))
             result.sort()
-            message.append(f'Przykładowe {n} wyników:')
-            message.append('')
+        else:
+            result = result_all
 
-        message.append(str(result))
+        message = f'{len(result)}/{len(result_all)}: {result}'
     else:
-        message.append(difflanek.get_help())
-    return context.updated(result='\n'.join(message)[:2000])
+        message = difflanek.get_help()
+    return context.updated(result=message[:2000])
 
 
 @command(name='rand')
