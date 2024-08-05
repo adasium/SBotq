@@ -741,7 +741,9 @@ async def _difflanek(context: MessageContext, client: discord.Client) -> Message
         else:
             result = result_all
 
-        message = f'{len(result)}/{len(result_all)}: {result}'
+        dict_size = difflanek.get_total_count()
+        percentage = 100 * len(result_all) / dict_size
+        message = f'{len(result)}/{len(result_all)} | {percentage:.2f}%: {result}'
     else:
         message = difflanek.get_help()
     return context.updated(result=message[:2000])

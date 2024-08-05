@@ -20,14 +20,19 @@ jak wpisywać słowa:
         poprawny początek/koniec słowa - [x)yzx(yz]
 """
 
-def find_solution (words: list[str], is_polish_word: bool) -> list[str]:
+
+def _load_dict() -> np.ndarray:
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), DICT_FILE)
     with open(path, encoding=DICT_ENCODING) as file:
         length = int(file.readline()) + 9
         dictionary = np.empty(length, dtype=object)
         for i in range(length):
             dictionary[i] = file.readline().split('/', 1)[0].rstrip('\n')
+    return dictionary
 
+
+def find_solution(words: list[str], is_polish_word: bool) -> list[str]:
+    dictionary = _load_dict()
     isPolishValid = is_polish_word
 
     polish = 'ąćęłńóśźż'
@@ -103,3 +108,7 @@ def find_solution (words: list[str], is_polish_word: bool) -> list[str]:
     answers = sorted(filter(lambda word: re.search(regex, word), dictionary), key=len)
 
     return answers
+
+
+def get_total_count() -> int:
+    return len(_load_dict())
