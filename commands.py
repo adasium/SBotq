@@ -49,6 +49,7 @@ from settings import MARKOV_MIN_WORD_COUNT
 from settings import RANDOM_MARKOV_MESSAGE_CHANCE
 from settings import RANDOM_MARKOV_MESSAGE_COUNT
 from utils import Buf
+from utils import format_fraction
 from utils import get_markov_weights
 from utils import shuffle_str
 from utils import triggered_chance
@@ -742,8 +743,8 @@ async def _difflanek(context: MessageContext, client: discord.Client) -> Message
             result = result_all
 
         dict_size = difflanek.get_total_count()
-        percentage = 100 * len(result_all) / dict_size
-        message = f'{len(result)}/{len(result_all)} | {percentage:.2f}%: {result}'
+        percentage = format_fraction(100 * len(result_all), dict_size)
+        message = f'{len(result)}/{len(result_all)} | {percentage}%: {result}'
     else:
         message = difflanek.get_help()
     return context.updated(result=message[:2000])

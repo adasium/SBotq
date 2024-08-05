@@ -5,6 +5,7 @@ import random
 from datetime import datetime
 from datetime import time
 from datetime import timedelta
+from decimal import Decimal
 from typing import Any
 from typing import Callable
 
@@ -95,3 +96,11 @@ def next_call_timestamp(
     while candidate < now:
         candidate += scheduled_every
     return candidate
+
+
+def format_fraction(numerator: int, denominator: int) -> str:
+    result = Decimal(numerator) / Decimal(denominator)
+    decimal_part = str(result).split('.')[1]
+    first_nonzero_pos = next((i for i, digit in enumerate(decimal_part) if digit != '0'), None)
+    precision = first_nonzero_pos + 1
+    return f'{result:.{precision}f}'
