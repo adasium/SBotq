@@ -34,8 +34,10 @@ class Interpreter(Visitor):
         return expr.accept(self)
 
     def visit_FormExpr(self, expr: FormExpr):
+        result = None
         for arg in expr.args:
-            arg.accept(self)
+            result = arg.accept(self)
+        return result
 
     def visit_FunExpr(self, expr: FunExpr):
         def divide(args):

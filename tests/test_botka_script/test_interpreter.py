@@ -17,12 +17,9 @@ def get_ast(source: str) -> Expr:
 
 
 def test_two_plus_two():
-    ast = get_ast(source='(+ 2 2)')
-    interpreter = Interpreter()
-
-    interpreter.interpret(ast)
-
-    assert interpreter.stdout == ''
+    result = interpret_source('(+ 2 2 2)')
+    assert result.stdout == '6'
+    assert result.success
 
 
 def test_message():
