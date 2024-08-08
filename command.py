@@ -14,7 +14,7 @@ class Command(NamedTuple):
     @classmethod
     def from_str(cls, s: str, prefix: str = DEFAULT_PREFIX) -> 'Command':
         if not s.startswith(prefix):
-            raise ValueError
+            raise ValueError(f'`{s}` does not start with `{prefix}`')
         stripped = remove_prefix(text=s, prefix=prefix)
         cmd_name, *raw_args = [part.strip() for part in stripped.split(' ', maxsplit=1)]
         _, *args = [part.strip() for part in stripped.split()]

@@ -7,13 +7,11 @@ from datetime import time
 from datetime import timedelta
 from decimal import Decimal
 from typing import Any
-from typing import Callable
 
 import pendulum
 
 from models import Markov2
 from models import Markov3
-from settings import DEFAULT_PREFIX
 
 
 def time_difference(time1: time, time2: time) -> timedelta:
@@ -65,16 +63,6 @@ class Buf:
     @property
     def last(self) -> Any:
         return self._buf[-1]
-
-
-def is_special_command(
-        full_message_content: str,
-        commands: dict[str, Callable],
-        special_commands: dict[str, Callable],
-        prefix: str = DEFAULT_PREFIX,
-) -> bool:
-    cmd_name = remove_prefix(text=full_message_content, prefix=prefix).split(' ')[0]
-    return cmd_name in commands and cmd_name in special_commands
 
 
 def remove_prefix(text: str, prefix: str) -> str:

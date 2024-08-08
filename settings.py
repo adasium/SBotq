@@ -5,7 +5,8 @@ from logger import get_logger
 logger = get_logger('settings')
 
 
-DEFAULT_PREFIX = getenv('PREFIX', default='!')
+DEFAULT_PREFIX = '!'
+PREFIX = getenv('PREFIX', default='!')
 COMMON_PREFIXES = ('!', '$', ';')
 BETA_PREFIX = ';'
 
@@ -18,5 +19,5 @@ TOKEN = getenv('TOKEN')
 
 
 logger.info('============================== SETTINGS ==============================')
-logger.info(f'DEFAULT_PREFIX={DEFAULT_PREFIX!r}')
+logger.info(f'PREFIX={PREFIX!r}')
 logger.info('======================================================================')

@@ -7,6 +7,7 @@ import textwrap
 from functools import wraps
 from typing import Awaitable
 from typing import Callable
+from typing import Generator
 from typing import Optional
 from typing import Protocol
 
@@ -76,16 +77,41 @@ def parse_pipe(message: str, prefix: str = DEFAULT_PREFIX) -> list[Command]:
             continue
 
         custom_cmd = get_custom_command(cmd.name)
-        if custom_cmd is None:
-            raise CommandNotFound(cmd.name)
+        if custom_cmd is not None:
+            ret.extend(custom_cmd)
+            continue
+        raise CommandNotFound(cmd.name)
 
-        ret.extend(parse_pipe(custom_cmd.command, prefix))
     return ret
 
 
 def _parse_commands(message: str, prefix: str = DEFAULT_PREFIX) -> List[Command]:
-    parts = [p.strip() for p in message.split(' | ')]
-    commands = [Command.from_str(part, prefix) for part in parts]
+    def _split_by_pipe(message: str) -> Generator[str, None, None]:
+        message = message.strip()
+        buf = ''
+        escaped = False
+        while True:
+            if len(message) == 0:
+                if escaped:
+                    raise ValueError('did not find closing ```')
+                if buf:
+                    yield buf
+                return None
+            if message.startswith('```'):
+                message = message[3:]
+                escaped = not escaped
+                continue
+            if message.startswith('|') and not escaped:
+                yield buf
+                buf = ''
+                message = message[1:]
+                continue
+
+            buf += message[0]
+            message = message[1:]
+
+    parts = list(_split_by_pipe(message))
+    commands = [Command.from_str(part.lstrip(), prefix) for part in parts]
     return commands
 
 
@@ -93,13 +119,15 @@ def get_builtin_command(cmd_name: str) -> CommandFunc | None:
     return COMMANDS.get(cmd_name)
 
 
-def get_custom_command(cmd_name: str) -> CommandModel | None:
+def get_custom_command(cmd_name: str) -> list[Command] | None:
     with get_db() as db:
         command = db.execute(
             select(CommandModel)
             .where(CommandModel.name == cmd_name),
         ).scalar_one_or_none()
-    return command
+    if command is None:
+        return None
+    return parse_pipe(command.command, prefix=DEFAULT_PREFIX)
 
 
 def get_command(cmd_name: str) -> CommandFunc | CommandModel | None:
@@ -548,7 +576,7 @@ async def show_command(context: MessageContext, client: discord.Client) -> Messa
                 .where(CommandModel.name == cmd_name),
             ).scalar_one_or_none()
             if command is not None:
-                return context.updated(result=f'Command `{cmd_name}` is defined as: `{command.command}`')
+                return context.updated(result=f'Command `{cmd_name}` is defined as: ```{command.command}```')
             else:
                 return context.updated(result=f'Command `{cmd_name}` is not defined')
     except Exception as e:

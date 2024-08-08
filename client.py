@@ -14,6 +14,7 @@ from commands import markov2
 from commands import markov3
 from commands import next_bernardynki
 from commands import parse_pipe
+from exceptions import CommandNotFound
 from getenv import getenv
 from logger import get_logger
 from message_context import MessageContext
@@ -65,7 +66,7 @@ class MsgCtx:
 
 
 class Client(discord.Client):
-    def __init__(self, prefix: str = settings.DEFAULT_PREFIX) -> None:
+    def __init__(self, prefix: str = settings.PREFIX) -> None:
         intents = discord.Intents.default()
         intents.message_content = True
         super().__init__(intents=intents)
@@ -121,14 +122,14 @@ class Client(discord.Client):
         _message_context = self._build_message_context(message)
 
         if _message_context.is_mentioned:
-            logger.debug('[client] mention')
+            logger.debug('-> [client.on_message.mention]')
             current_context = MessageContext(discord_message=message, result='', command=Command.dummy())
             generated_markov = await generate_markov2(current_context, self).result
             await message.channel.send(generated_markov)
             return None
 
         if _message_context.should_markovify:
-            logger.debug('[client] markovifying')
+            logger.debug('-> [client.on_message.markovifying]')
             current_context = MessageContext(discord_message=message, result='', command=Command.dummy())
             await markov2(current_context, self)
             await markov3(current_context, self)
@@ -141,8 +142,13 @@ class Client(discord.Client):
         if len(remove_prefix(text=message.content, prefix=self.prefix)) == 0:
             return None
 
-        pipe = parse_pipe(message.content, prefix=self.prefix)
-        current_context = MessageContext(message)
+        try:
+            logger.debug('-> [client.on_message.command]')
+            pipe = parse_pipe(message.content, prefix=self.prefix)
+            current_context = MessageContext(message)
+        except CommandNotFound as e:
+            return await message.channel.send(f'Command `{e.value}` not found')
+
         try:
             for command in pipe:
                 cmd_func = get_builtin_command(command.name)
@@ -154,13 +160,10 @@ class Client(discord.Client):
 
     async def scheduler(self) -> None:
         now = pendulum.now(pendulum.UTC)
-        logger.info('scheduler init')
         when_should_be_called = {
             command: next_call_timestamp(now, command.scheduled_at, command.scheduled_every)
             for command in self.scheduled_commands
         }
-        for cmd, t in when_should_be_called.items():
-            logger.info(f'scheduled {cmd} at {t}')
         while True:
             try:
                 now = pendulum.now(pendulum.UTC)
