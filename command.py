@@ -25,6 +25,9 @@ class Command(NamedTuple):
             args=args,
         )
 
+    def to_str(self, prefix: str = DEFAULT_PREFIX) -> str:
+        return f'{prefix}{self.name} {self.raw_args}'
+
     @classmethod
     def dummy(cls) -> 'Command':
         return Command(

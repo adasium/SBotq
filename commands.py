@@ -87,7 +87,6 @@ def parse_pipe(message: str, prefix: str = DEFAULT_PREFIX) -> list[Command]:
 
 def _parse_commands(message: str, prefix: str = DEFAULT_PREFIX) -> List[Command]:
     def _split_by_pipe(message: str) -> Generator[str, None, None]:
-        message = message.strip()
         buf = ''
         escaped = False
         while True:
@@ -98,6 +97,7 @@ def _parse_commands(message: str, prefix: str = DEFAULT_PREFIX) -> List[Command]
                     yield buf
                 return None
             if message.startswith('```'):
+                buf += message[:3]
                 message = message[3:]
                 escaped = not escaped
                 continue
@@ -531,11 +531,17 @@ async def update_command(context: MessageContext, client: discord.Client) -> Mes
         return context.updated(result=f'Usage: `{client.prefix}updatecmd <command_name>`')
     cmd_name = context.command.args[0]
     try:
+        new_cmd_value = context.command.raw_args.split(' ', maxsplit=1)[1]
+        commands = parse_pipe(new_cmd_value, prefix=client.prefix)
+        commands_str = ' | '.join(
+            cmd.to_str()
+            for cmd in commands
+        )
         with get_db() as db:
             result = db.execute(
                 update(CommandModel)
                 .where(CommandModel.name == cmd_name)
-                .values(command=context.command.raw_args.split(' ', maxsplit=1)[1]),
+                .values(command=commands_str),
             )
             db.commit()
             if result.rowcount == 0:  # type: ignore
@@ -576,7 +582,8 @@ async def show_command(context: MessageContext, client: discord.Client) -> Messa
                 .where(CommandModel.name == cmd_name),
             ).scalar_one_or_none()
             if command is not None:
-                return context.updated(result=f'Command `{cmd_name}` is defined as: ```{command.command}```')
+                cmd_display = command.command.replace('`', '\\`')
+                return context.updated(result=f'Command `{cmd_name}` is defined as: ```{cmd_display}\n```')
             else:
                 return context.updated(result=f'Command `{cmd_name}` is not defined')
     except Exception as e:
@@ -690,7 +697,13 @@ async def suggest(context: MessageContext, client: discord.Client) -> MessageCon
 @command(name='yywrap')
 async def yywrap(context: MessageContext, client: discord.Client) -> MessageContext:
     logger.debug('yy > %s', context.command.raw_args)
-    if not context.command.raw_args:
+    source = context.command.raw_args
+    if source.startswith('```'):
+        source = source[3:]
+    if source.endswith('```'):
+        source = source[:-3]
+
+    if not source:
         return context.updated(
             result=textwrap.dedent(f'''
             ```
@@ -710,7 +723,7 @@ async def yywrap(context: MessageContext, client: discord.Client) -> MessageCont
         referenced_message = await context.message.channel.fetch_message(context.message.reference.message_id)
         extra['referenced_message'] = referenced_message.content
     result = interpret_source(
-        context.command.raw_args,
+        source,
         **extra,
         exc=Exception,
     )
