@@ -46,6 +46,6 @@ def interpret_source(source: str, exc: Exception = ValueError, **kwargs) -> Inte
     else:
         return InterpreterResult(
             success=True,
-            stdout=str(interpreter.stdout or final_expr),
+            stdout=str(interpreter.stdout or (final_expr is not None and final_expr) or ''),
             e=None,
         )
