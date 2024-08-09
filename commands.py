@@ -101,6 +101,10 @@ def _parse_commands(message: str, prefix: str = DEFAULT_PREFIX) -> List[Command]
                 message = message[3:]
                 escaped = not escaped
                 continue
+            if message.startswith('||'):
+                buf += message[:2]
+                message = message[2:]
+                continue
             if message.startswith('|') and not escaped:
                 yield buf
                 buf = ''
