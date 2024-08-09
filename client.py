@@ -124,7 +124,7 @@ class Client(discord.Client):
         if _message_context.is_mentioned:
             logger.debug('-> [client.on_message.mention]')
             current_context = MessageContext(discord_message=message, result='', command=Command.dummy())
-            generated_markov = await generate_markov2(current_context, self).result
+            generated_markov = (await generate_markov2(current_context, self)).result
             await message.channel.send(generated_markov)
             return None
 
