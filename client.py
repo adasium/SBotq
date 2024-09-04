@@ -152,7 +152,8 @@ class Client(discord.Client):
         try:
             for command in pipe:
                 cmd_func = get_builtin_command(command.name)
-                current_context = await cmd_func(current_context.updated(command=command), self)
+                current_context.command = command
+                current_context = await cmd_func(current_context, self)
             if len(current_context.result.strip()) > 0:
                 return await message.channel.send(current_context.result)
         except Exception as e:

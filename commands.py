@@ -790,20 +790,25 @@ async def _difflanek(context: MessageContext, client: discord.Client) -> Message
         dict_size = difflanek.get_total_count()
         percentage = format_fraction(100 * len(result_all), dict_size)
         message = f'{len(result)}/{len(result_all)} | {percentage}%: {result}'
+        context = context.updated(result=message[:2000], input=result_all)
+        return context
     else:
-        message = difflanek.get_help()
-    return context.updated(result=message[:2000])
+        return context.updated(result=difflanek.get_help())
 
 
 @command(name='rand')
 async def _rand(context: MessageContext, client: discord.Client) -> MessageContext:
-    default_rand = 4
+    help = '''\
+```
+!rand <a> [b [c [d ...]]]
+!echo a b c d | !rand
+```
+'''
+    if context.input is not None and isinstance(context.input, list):
+        return context.updated(result=random.choice(context.input))
 
-    if not context.command.raw_args:
-        return context.updated(result=default_rand)
-
-    params = [param for param in context.command.raw_args.split() if param]
-    if not params:
-        return context.updated(result=default_rand)
-
-    return context.updated(result=random.choice(params))
+    target = (context.result or context.command.raw_args).split()
+    if target:
+        return context.updated(result=random.choice(target))
+    else:
+        return context.updated(result=help)

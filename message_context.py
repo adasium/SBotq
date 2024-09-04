@@ -15,6 +15,7 @@ class MessageContext:
     discord_message: Optional[discord.Message] = None
     result: str = ''
     command: Command = field(default_factory=Command.dummy)
+    input: object = None
 
     @property
     def message(self) -> discord.Message:
@@ -26,13 +27,14 @@ class MessageContext:
         else:
             return self.discord_message
 
-    def updated(self, *, result: Optional[str] = None, command: Optional[Command] = None) -> MessageContext:
+    def updated(self, *, result: Optional[str] = None, command: Optional[Command] = None, input: object = None) -> MessageContext:
         if result is None and command is None:
             raise ValueError('Either result or command need to be updated')
         return MessageContext(
             discord_message=self.discord_message,
             result=result or self.result,
             command=command or self.command,
+            input=input,
         )
 
     @classmethod
