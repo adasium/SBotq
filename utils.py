@@ -88,6 +88,8 @@ def next_call_timestamp(
 
 def format_fraction(numerator: int, denominator: int) -> str:
     result = Decimal(numerator) / Decimal(denominator)
+    if result == 0:
+        return '0'
     decimal_part = str(result).split('.')[1]
     first_nonzero_pos = next((i for i, digit in enumerate(decimal_part) if digit != '0'), None)
     precision = first_nonzero_pos + 1
