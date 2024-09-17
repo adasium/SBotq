@@ -782,10 +782,10 @@ async def _difflanek(context: MessageContext, client: discord.Client) -> Message
         result_all = list(filter(lambda x: len(x) >= 3, difflanek.find_solution(words, is_polish_word)))
         n = 50
         if len(result_all) > n:
-            result = list(set(random.sample(result_all, n)))
-            result.sort()
+            result = set(random.sample(result_all, n))
         else:
             result = result_all
+        result.sort()
 
         dict_size = difflanek.get_total_count()
         percentage = format_fraction(100 * len(result_all), dict_size)
