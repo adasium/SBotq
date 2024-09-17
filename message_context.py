@@ -16,6 +16,7 @@ class MessageContext:
     result: str = ''
     command: Command = field(default_factory=Command.dummy)
     input: object = None
+    attachment: discord.File | None = None
 
     @property
     def message(self) -> discord.Message:

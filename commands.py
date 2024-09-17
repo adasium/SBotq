@@ -779,13 +779,12 @@ async def _difflanek(context: MessageContext, client: discord.Client) -> Message
         is_polish_word = params[0] == 'pl'
         words = params[int(is_polish_word):]
 
-        result_all = list(filter(lambda x: len(x) >= 3, difflanek.find_solution(words, is_polish_word)))
+        result_all = sorted(filter(lambda x: len(x) >= 3, difflanek.find_solution(words, is_polish_word)))
         n = 50
         if len(result_all) > n:
-            result = set(random.sample(result_all, n))
+            result = sorted(set(random.sample(result_all, n)))
         else:
             result = result_all
-        result.sort()
 
         dict_size = difflanek.get_total_count()
         percentage = format_fraction(100 * len(result_all), dict_size)
@@ -812,3 +811,20 @@ async def _rand(context: MessageContext, client: discord.Client) -> MessageConte
         return context.updated(result=random.choice(target))
     else:
         return context.updated(result=help)
+
+
+@command(name='all')
+async def _all(context: MessageContext, client: discord.Client) -> MessageContext:
+    if context.input is not None and isinstance(context.input, list):
+        input_str = str(context.input)
+        if len(input_str) <= DISCORD_MESSAGE_LIMIT:
+            return context.updated(result=input_str)
+        else:
+            with io.BytesIO() as buf:
+                buf.write(
+                    '\n'.join(context.input).encode('utf8'),
+                )
+                buf.seek(0)
+                context.attachment = discord.File(fp=buf, filename='all.txt')
+                return context
+    return context

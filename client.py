@@ -155,7 +155,10 @@ class Client(discord.Client):
                 current_context.command = command
                 current_context = await cmd_func(current_context, self)
             if len(current_context.result.strip()) > 0:
-                return await message.channel.send(current_context.result)
+                return await message.channel.send(
+                    content=current_context.result,
+                    file=current_context.attachment,
+                )
         except Exception as e:
             return await message.channel.send(str(e))
 
