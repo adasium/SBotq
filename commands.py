@@ -513,7 +513,7 @@ async def generate_carrot(context: MessageContext, client: discord.Client) -> Me
 @command(name='addcmd', special=True)
 async def add_command(context: MessageContext, client: discord.Client) -> MessageContext:
     if len(context.command.args) == 0:
-        return context.updated(result=f'Usage: `{client.prefix}updatecmd <command_name>`')
+        return context.updated(result=f'Usage: `{client.prefix}addcmd <command_name> <instructions>`')
     cmd_name = context.command.args[0]
     try:
         with get_db() as db:
@@ -532,7 +532,7 @@ async def add_command(context: MessageContext, client: discord.Client) -> Messag
 @command(name='updatecmd', special=True)
 async def update_command(context: MessageContext, client: discord.Client) -> MessageContext:
     if len(context.command.args) == 0:
-        return context.updated(result=f'Usage: `{client.prefix}updatecmd <command_name>`')
+        return context.updated(result=f'Usage: `{client.prefix}updatecmd <command_name> <instructions>`')
     cmd_name = context.command.args[0]
     try:
         new_cmd_value = context.command.raw_args.split(' ', maxsplit=1)[1]
@@ -558,7 +558,7 @@ async def update_command(context: MessageContext, client: discord.Client) -> Mes
 @command(name='delcmd', special=True)
 async def delete_command(context: MessageContext, client: discord.Client) -> MessageContext:
     if len(context.command.args) != 1:
-        return context.updated(result=f'Usage: `{client.prefix}updatecmd <command_name>`')
+        return context.updated(result=f'Usage: `{client.prefix}delcmd <command_name>`')
     cmd_name = context.command.args[0]
     try:
         with get_db() as db:
@@ -575,7 +575,7 @@ async def delete_command(context: MessageContext, client: discord.Client) -> Mes
 @command(name='showcmd', special=True)
 async def show_command(context: MessageContext, client: discord.Client) -> MessageContext:
     if len(context.command.args) != 1:
-        return context.updated(result=f'Usage: `{client.prefix}updatecmd <command_name>`')
+        return context.updated(result=f'Usage: `{client.prefix}showcmd <command_name>`')
     cmd_name = context.command.args[0]
     try:
         if cmd_name in COMMANDS:
