@@ -657,7 +657,7 @@ async def generate_markov_at_random_time(context: MessageContext, client: discor
                     ).send(markov_message.result)
 
 
-@run_every(months=1, days=1, condition=lambda dt: (Bernardynki.next_after(dt).when - dt).in_days() in (7, 3, 1, 0))
+@run_every(days=1, condition=lambda dt: (Bernardynki.next_after(dt).when - dt).in_days() in (7, 3, 1, 0))
 @command(name='next_bernardynki', special=True)
 async def next_bernardynki(context: MessageContext, client: discord.Client) -> MessageContext:
     now = pendulum.now(pendulum.UTC)
