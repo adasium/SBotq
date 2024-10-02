@@ -6,3 +6,5 @@ Pillow==9.0.1
 requests==2.26.0
 SQLAlchemy==2.0.24
 pandas==2.1.4
+opencv-python==4.10.0.84
+pytesseract==0.3.13

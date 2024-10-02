@@ -33,6 +33,7 @@ from database import get_db
 from decorators import daily
 from decorators import run_every
 from difflanek import difflanek
+from difflanek import opencv
 from exceptions import CommandNotFound
 from exceptions import DiscordMessageMissingException
 from getenv import getenv
@@ -828,3 +829,23 @@ async def _all(context: MessageContext, client: discord.Client) -> MessageContex
                 context.attachment = discord.File(fp=buf, filename='all.txt')
                 return context
     return context
+
+
+@command(name='dflocr')
+async def _dflocr(context: MessageContext, client: discord.Client) -> MessageContext:
+    if context.message.reference is None:
+        return context.updated(result='You need to respond to a message with an image')
+
+    referenced_message = await context.message.channel.fetch_message(context.message.reference.message_id)
+    for attachment in referenced_message.attachments:
+        ct = attachment.content_type
+        if ct and ct.startswith('image'):
+            logger.debug('Found image with type: %s', ct)
+            image = await attachment.read()
+            try:
+                dfl = opencv.get_difflanek(image)
+            except opencv.DifflanekException:
+                return context.updated(result='no rectangles found')
+            else:
+                return context.updated(result=' '.join(dfl))
+    return context.updated(result='no images found')
