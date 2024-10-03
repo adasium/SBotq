@@ -315,7 +315,7 @@ def text_to_difflanek(text: str, colour: str, left_closed: bool, right_closed: b
         return text.upper()
     left_bracket = '[' if left_closed else '('
     right_bracket = ']' if right_closed else ')'
-    return f'{left_bracket}{text}{right_bracket}'
+    return f'{left_bracket}{text.lower()}{right_bracket}'
 
 
 def get_difflanek(image: Img | bytes, *, debug: bool = False) -> list[str]:
