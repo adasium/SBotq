@@ -176,8 +176,8 @@ class Client(discord.Client):
                     is_condition_fulfilled = command.condition is None or command.condition(now)
                     # lambda dt: (Bernardynki.next_after(dt).when - dt).in_days()
                     if is_the_high_time and is_condition_fulfilled:
-                        await asyncio.create_task(command(context=None, client=self))
                         when_should_be_called[command] = when_should_be_called[command] + command.scheduled_every
+                        await asyncio.create_task(command(context=None, client=self))
                 await asyncio.sleep(0.5)
             except Exception as e:
                 logger.exception(e)
