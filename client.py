@@ -123,14 +123,14 @@ class Client(discord.Client):
 
         if _message_context.is_mentioned:
             logger.debug('-> [client.on_message.mention]')
-            current_context = MessageContext(discord_message=message, result='', command=Command.dummy())
+            current_context = MessageContext(original_message=message, result='', command=Command.dummy())
             generated_markov = (await generate_markov2(current_context, self)).result
             await message.channel.send(generated_markov)
             return None
 
         if _message_context.should_markovify:
             logger.debug('-> [client.on_message.markovifying]')
-            current_context = MessageContext(discord_message=message, result='', command=Command.dummy())
+            current_context = MessageContext(original_message=message, result='', command=Command.dummy())
             await markov2(current_context, self)
             await markov3(current_context, self)
             await carrot(current_context, self)

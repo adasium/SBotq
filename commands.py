@@ -368,8 +368,8 @@ async def train_markov(context: MessageContext, client: discord.Client) -> Messa
                 and not message.content.startswith(client.prefix)
                 and len(message.content.split()) > MARKOV_MIN_WORD_COUNT
         ):
-            await markov2(MessageContext(discord_message=message), client)
-            await markov3(MessageContext(discord_message=message), client)
+            await markov2(MessageContext(original_message=message), client)
+            await markov3(MessageContext(original_message=message), client)
     logger.debug('DONE TRAINING ON CHANNEL %s', context.message.channel)
     return context
 
@@ -385,7 +385,7 @@ async def train_carrot(context: MessageContext, client: discord.Client) -> Messa
                 and not message.content.startswith((client.prefix, *COMMON_PREFIXES))
                 and len(message.content) >= CONTEXT_SIZE
         ):
-            await carrot(MessageContext(discord_message=message), client)
+            await carrot(MessageContext(original_message=message), client)
     logger.debug('DONE TRAINING ON CHANNEL %s', context.message.channel)
     return context
 
