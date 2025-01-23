@@ -124,7 +124,6 @@ class Client(discord.Client):
             current_context = MessageContext(original_message=message, result='', command=Command.dummy())
             generated_markov = (await generate_markov2(current_context, self)).result
             await message.channel.send(generated_markov)
-            return None
 
         if _message_context.should_markovify:
             logger.debug('-> [client.on_message.markovifying]')
