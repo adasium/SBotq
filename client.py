@@ -60,7 +60,8 @@ class MsgCtx:
     @property
     def should_markovify(self) -> bool:
         return (
-            not self._is_commandlike
+            self.message.author != self.client.user
+            and not self._is_commandlike
             and self.message.channel.id not in self.client.markov_blacklisted_channel_ids
         )
 
@@ -115,9 +116,6 @@ class Client(discord.Client):
 
     async def on_message(self, message: discord.Message) -> None:
         logger.debug('[%s > %s] %s: %s', message.guild.name, message.channel.name, message.author, message.content)
-
-        if self._is_self_message(message):
-            return None
 
         _message_context = self._build_message_context(message)
 
@@ -181,9 +179,6 @@ class Client(discord.Client):
                 await asyncio.sleep(0.5)
             except Exception as e:
                 logger.exception(e)
-
-    def _is_self_message(self, message: discord.Message) -> bool:
-        return message.author == self.user
 
     def _build_message_context(self, message: discord.Message) -> MsgCtx:
         return MsgCtx(
