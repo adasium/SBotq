@@ -32,12 +32,25 @@ class Bernardynki:
     def __add__(self, other: object) -> Bernardynki:
         if isinstance(other, int):
             b = self
-            for _ in range(other):
-                b = Bernardynki(
-                    when=b.when.add(months=1, days=1),
-                    count=b.count + 1,
-                )
+            if other > 0:
+                for _ in range(other):
+                    b = Bernardynki(
+                        when=b.when.add(months=1, days=1),
+                        count=b.count + 1,
+                    )
+            else:
+                for _ in range(-other):
+                    b = Bernardynki(
+                        when=b.when.subtract(months=1, days=1),
+                        count=b.count - 1,
+                    )
             return b
+        else:
+            return NotImplemented
+
+    def __sub__(self, other: object) -> Bernardynki:
+        if isinstance(other, int):
+            return self + -other
         else:
             return NotImplemented
 
@@ -45,6 +58,14 @@ class Bernardynki:
         if isinstance(other, int):
             for _ in range(other):
                 self = self + 1
+            return self
+        else:
+            return NotImplemented
+
+    def __isub__(self, other: object) -> Bernardynki:
+        if isinstance(other, int):
+            for _ in range(other):
+                self = self - 1
             return self
         else:
             return NotImplemented

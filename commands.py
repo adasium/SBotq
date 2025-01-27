@@ -674,6 +674,19 @@ async def next_bernardynki(context: MessageContext, client: discord.Client) -> M
     while next_bernardynki < now:
         next_bernardynki += 1
 
+    sign = '+'
+    offset = context.command.raw_args.strip()
+    if offset.startswith(('-', '+')):
+        sign, offset = offset[0], offset[1:]
+    try:
+        offset = int(offset)
+    except ValueError:
+        offset = 0
+    if sign == '+':
+        next_bernardynki += offset
+    else:
+        next_bernardynki -= offset
+
     date_fmt = next_bernardynki.when.format('dddd DD.MM.YYYY', locale='pl')
     days = next_bernardynki.when.diff(now).in_days()
     year_in_words = year_in_words_mapping[next_bernardynki.year]
