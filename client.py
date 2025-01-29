@@ -1,4 +1,5 @@
 import asyncio
+import re
 
 import discord
 import pendulum
@@ -28,22 +29,49 @@ logger = get_logger(__name__)
 discord.gateway.KeepAliveHandler.run = monkeypatch.run
 
 
+MENTION_EVERYONE_REGEX = re.compile('@everyone')
+MENTION_HERE_REGEX = re.compile('@here')
+MENTION_REGEX = re.compile('<@([^>]+)>')
+
+
 class MsgCtx:
     def __init__(self, client: discord.Client, message: discord.Message) -> None:
         self.client = client
         self.message = message
 
     @property
-    def is_mentioned_directly(self) -> bool:
+    def _is_mentioned_directly(self) -> bool:
         return self.client.user.mentioned_in(self.message)
 
     @property
-    def is_mentioned_via_role(self) -> bool:
+    def _is_mentioned_via_role(self) -> bool:
         return set(self.message.guild.me.roles).intersection(set(self.message.role_mentions))
 
     @property
     def is_mentioned(self) -> bool:
-        return self.is_mentioned_directly or self.is_mentioned_via_role
+        return self._is_mentioned_directly or self._is_mentioned_via_role
+
+    @property
+    def get_mention_count(self) -> int:
+        def _maybe_int(i: str) -> int | None:
+            try:
+                return int(i)
+            except ValueError:
+                return None
+        count = 0
+        user_role_ids = [role.id for role in self.message.guild.me.roles]
+        mention_ids = MENTION_REGEX.findall(self.message.content)
+        for mention_id in mention_ids:
+            if mention_id.startswith('&'):
+                if _maybe_int(mention_id[1:]) in user_role_ids:
+                    count += 1
+                    continue
+            if _maybe_int(mention_id) == self.client.user.id:
+                count += 1
+                continue
+        count += len(MENTION_EVERYONE_REGEX.findall(self.message.content))
+        count += len(MENTION_HERE_REGEX.findall(self.message.content))
+        return count
 
     @property
     def is_command(self) -> bool:
@@ -121,9 +149,10 @@ class Client(discord.Client):
 
         if _message_context.is_mentioned:
             logger.debug('-> [client.on_message.mention]')
-            current_context = MessageContext(original_message=message, result='', command=Command.dummy())
-            generated_markov = (await generate_markov2(current_context, self)).result
-            await message.channel.send(generated_markov)
+            for i in range(_message_context.get_mention_count):
+                current_context = MessageContext(original_message=message, result='', command=Command.dummy())
+                generated_markov = (await generate_markov2(current_context, self)).result
+                await message.channel.send(generated_markov)
 
         if _message_context.should_markovify:
             logger.debug('-> [client.on_message.markovifying]')
