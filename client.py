@@ -71,6 +71,8 @@ class MsgCtx:
                 continue
         count += len(MENTION_EVERYONE_REGEX.findall(self.message.content))
         count += len(MENTION_HERE_REGEX.findall(self.message.content))
+        if self.message.reference is not None:
+            count += 1
         return count
 
     @property
