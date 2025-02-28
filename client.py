@@ -80,10 +80,6 @@ class MsgCtx:
         return self.message.content.startswith(self.client.prefix)
 
     @property
-    def is_beta_command(self) -> bool:
-        return self.message.content.startswith(settings.BETA_PREFIX)
-
-    @property
     def _is_commandlike(self) -> bool:
         return self.message.content.startswith(settings.COMMON_PREFIXES)
 
