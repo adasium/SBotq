@@ -9,7 +9,12 @@ from decimal import Decimal
 from typing import Any
 
 import pendulum
+from sqlalchemy import and_
+from sqlalchemy import update
 
+from carrotson import split_into_paths
+from database import get_db
+from models import Carrot
 from models import Markov2
 from models import Markov3
 
@@ -94,3 +99,133 @@ def format_fraction(numerator: int, denominator: int) -> str:
     first_nonzero_pos = next((i for i, digit in enumerate(decimal_part) if digit != '0'), None)
     precision = first_nonzero_pos + 1
     return f'{result:.{precision}f}'
+
+
+
+def _markovify2(
+    *,
+    text: str,
+    channel_id: int,
+    guild_id: int,
+) -> None:
+    parts = text.split()
+    with get_db() as db:
+        for word1, word2 in window([None] + parts + [None], n=2):
+            result = db.execute(
+                update(Markov2)
+                .where(
+                    and_(
+                        Markov2.word1 == word1,
+                        Markov2.word2 == word2,
+                        Markov2.channel_id == channel_id,
+                        Markov2.guild_id == guild_id,
+                    ),
+                )
+                .values(counter=Markov2.counter + 1),
+            )
+            if result.rowcount == 0:  # type: ignore
+                db.add(
+                    Markov2(
+                        word1=word1,
+                        word2=word2,
+                        channel_id=channel_id,
+                        guild_id=guild_id,
+                    ),
+                )
+        db.commit()
+
+
+def _markovify3(
+    *,
+    text: str,
+    channel_id: int,
+    guild_id: int,
+) -> None:
+    parts = text.split()
+    with get_db() as db:
+        for word1, word2, word3 in window([None] + parts + [None], n=3):
+            result = db.execute(
+                update(Markov3)
+                .where(
+                    and_(
+                        Markov3.word1 == word1,
+                        Markov3.word2 == word2,
+                        Markov3.word3 == word3,
+                        Markov3.channel_id == channel_id,
+                        Markov3.guild_id == guild_id,
+                    ),
+                )
+                .values(counter=Markov3.counter + 1),
+            )
+            if result.rowcount == 0:  # type: ignore
+                db.add(
+                    Markov3(
+                        word1=word1,
+                        word2=word2,
+                        word3=word3,
+                        channel_id=channel_id,
+                        guild_id=guild_id,
+                    ),
+                )
+        db.commit()
+
+
+def _carrot(
+    *,
+    text: str,
+    channel_id: int,
+    guild_id: int,
+) -> None:
+    with get_db() as db:
+        for path in split_into_paths(text):
+            result = db.execute(
+                update(Carrot)
+                .where(
+                    and_(
+                        Carrot.context == path.context,
+                        Carrot.following == path.following,
+                        Carrot.channel_id == channel_id,
+                        Carrot.guild_id == guild_id,
+                    ),
+                )
+                .values(counter=Carrot.counter + 1),
+            )
+            if result.rowcount == 0:  # type: ignore
+                db.add(
+                    Carrot(
+                        context=path.context,
+                        following=path.following,
+                        channel_id=channel_id,
+                        guild_id=guild_id,
+                    ),
+                )
+        db.commit()
+
+
+def markovify(
+    *,
+    text: str,
+    channel_id: int,
+    guild_id: int,
+    markov2: bool = False,
+    markov3: bool = False,
+    carrot: bool = False,
+) -> None:
+    if markov2:
+        _markovify2(
+            text=text,
+            channel_id=channel_id,
+            guild_id=guild_id,
+        )
+    if markov3:
+        _markovify3(
+            text=text,
+            channel_id=channel_id,
+            guild_id=guild_id,
+        )
+    if carrot:
+        _carrot(
+            text=text,
+            channel_id=channel_id,
+            guild_id=guild_id,
+        )

@@ -16,7 +16,6 @@ import pandas as pd
 import pendulum
 import requests
 from PIL import Image
-from sqlalchemy import and_
 from sqlalchemy import delete
 from sqlalchemy import desc
 from sqlalchemy import or_
@@ -27,7 +26,6 @@ import diffle
 from bernardynki import Bernardynki
 from botka_script.utils import interpret_source
 from carrotson import CONTEXT_SIZE
-from carrotson import split_into_paths
 from command import Command
 from database import get_db
 from decorators import daily
@@ -53,9 +51,9 @@ from settings import RANDOM_MARKOV_MESSAGE_COUNT
 from utils import Buf
 from utils import format_fraction
 from utils import get_markov_weights
+from utils import markovify
 from utils import shuffle_str
 from utils import triggered_chance
-from utils import window
 
 
 class CommandFunc(Protocol):
@@ -243,30 +241,12 @@ async def markov2(context: MessageContext, client: discord.Client) -> MessageCon
     if len(parts) < 2:
         return context
 
-    with get_db() as db:
-        for word1, word2 in window([None] + parts + [None], n=2):
-            result = db.execute(
-                update(Markov2)
-                .where(
-                    and_(
-                        Markov2.word1 == word1,
-                        Markov2.word2 == word2,
-                        Markov2.channel_id == context.message.channel.id,
-                        Markov2.guild_id == context.message.guild.id,
-                    ),
-                )
-                .values(counter=Markov2.counter + 1),
-            )
-            if result.rowcount == 0:  # type: ignore
-                db.add(
-                    Markov2(
-                        word1=word1,
-                        word2=word2,
-                        channel_id=context.message.channel.id,
-                        guild_id=context.message.guild.id,
-                    ),
-                )
-        db.commit()
+    markovify(
+        text=context.message.content,
+        channel_id=context.message.channel.id,
+        guild_id=context.message.guild.id,
+        markov2=True,
+    )
     return context
 
 
@@ -276,60 +256,22 @@ async def markov3(context: MessageContext, client: discord.Client) -> MessageCon
     if len(parts) < 3:
         return context
 
-    with get_db() as db:
-        for word1, word2, word3 in window([None] + parts + [None], n=3):
-            result = db.execute(
-                update(Markov3)
-                .where(
-                    and_(
-                        Markov3.word1 == word1,
-                        Markov3.word2 == word2,
-                        Markov3.word3 == word3,
-                        Markov3.channel_id == context.message.channel.id,
-                        Markov3.guild_id == context.message.guild.id,
-                    ),
-                )
-                .values(counter=Markov3.counter + 1),
-            )
-            if result.rowcount == 0:  # type: ignore
-                db.add(
-                    Markov3(
-                        word1=word1,
-                        word2=word2,
-                        word3=word3,
-                        channel_id=context.message.channel.id,
-                        guild_id=context.message.guild.id,
-                    ),
-                )
-        db.commit()
+    markovify(
+        text=context.message.content,
+        channel_id=context.message.channel.id,
+        guild_id=context.message.guild.id,
+        markov3=True,
+    )
     return context
 
 
 async def carrot(context: MessageContext, client: discord.Client) -> MessageContext:
-    with get_db() as db:
-        for path in split_into_paths(context.message.content):
-            result = db.execute(
-                update(Carrot)
-                .where(
-                    and_(
-                        Carrot.context == path.context,
-                        Carrot.following == path.following,
-                        Carrot.channel_id == context.message.channel.id,
-                        Carrot.guild_id == context.message.guild.id,
-                    ),
-                )
-                .values(counter=Carrot.counter + 1),
-            )
-            if result.rowcount == 0:  # type: ignore
-                db.add(
-                    Carrot(
-                        context=path.context,
-                        following=path.following,
-                        channel_id=context.message.channel.id,
-                        guild_id=context.message.guild.id,
-                    ),
-                )
-        db.commit()
+    markovify(
+        text=context.message.content,
+        channel_id=context.message.channel.id,
+        guild_id=context.message.guild.id,
+        carrot=True,
+    )
     return context
 
 
@@ -492,22 +434,25 @@ def _get_carrot_candidates(db, context: str) -> list[Carrot]:
     return candidates
 
 
-@command(name='carrot')
-async def generate_carrot(context: MessageContext, client: discord.Client) -> MessageContext:
-    msg_context = context.command.raw_args
-
+def generate_carrot_from_context(msg_context: str) -> str:
     with get_db() as db:
         while len(msg_context) < DISCORD_MESSAGE_LIMIT:
             candidates = _get_carrot_candidates(db, context=msg_context[-CONTEXT_SIZE:] if msg_context else '')
             if not candidates:
-                return context.updated(result=msg_context)
+                return msg_context
 
             random.shuffle(candidates)
             if 0 < len(msg_context) < CONTEXT_SIZE:
                 msg_context = candidates[0].context + candidates[0].following
             else:
                 msg_context += candidates[0].following
+    return msg_context
 
+
+@command(name='carrot')
+async def generate_carrot(context: MessageContext, client: discord.Client) -> MessageContext:
+    msg_context = context.command.raw_args
+    msg_context = generate_carrot_from_context(msg_context)
     return context.updated(result=msg_context)
 
 
@@ -862,3 +807,37 @@ async def _dflocr(context: MessageContext, client: discord.Client) -> MessageCon
             else:
                 return context.updated(result=' '.join(dfl))
     return context.updated(result='no images found')
+
+
+@command(name='przeczytaj')
+async def _read_attachment(context: MessageContext, client: discord.Client) -> MessageContext:
+    if context.message.reference is None:
+        return context.updated(result='You need to respond to a message with that command')
+    referenced_message = await context.message.channel.fetch_message(context.message.reference.message_id)
+    await referenced_message.add_reaction('📖')
+    nothing_to_read = True
+    for attachment in referenced_message.attachments:
+        ct = attachment.content_type
+        if not ct:
+            continue
+        if not ct.startswith('text'):
+            continue
+        logger.debug('Found text with type: %s', ct)
+        nothing_to_read = False
+        text_bytes = await attachment.read()
+        text = text_bytes.decode('utf8')
+        markovify(
+            text=text,
+            channel_id=context.message.channel.id,
+            guild_id=context.message.guild.id,
+            markov2=True,
+            markov3=True,
+            carrot=True,
+        )
+    await referenced_message.remove_reaction('📖', client.user)
+    if nothing_to_read:
+        return context.updated(result='nothing to read')
+    await referenced_message.add_reaction('🤔')
+    text_review = generate_carrot_from_context(text[:8])
+    await referenced_message.remove_reaction('🤔', client.user)
+    return context.updated(result=text_review)
