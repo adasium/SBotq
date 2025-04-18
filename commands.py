@@ -841,3 +841,24 @@ async def _read_attachment(context: MessageContext, client: discord.Client) -> M
     text_review = generate_carrot_from_context(text[:8])
     await referenced_message.remove_reaction('🤔', client.user)
     return context.updated(result=text_review)
+
+
+@command(name='d20')
+async def _d20(context: MessageContext, client: discord.Client) -> MessageContext:
+    roll = random.randint(1, 20)
+    n1 = roll // 10
+    n2 = roll % 10
+    return context.updated(
+        result="""\
+```
+     _._
+   _/ | \_
+ _/---^---\_
+|_   /{n1}\   _|
+| \ / {n2} \ / |
+|__/_____\__|
+ ^-_\   /_-^
+    ^-v-^
+```
+""".format(n1=roll // 10 or ' ', n2=roll % 10),
+    )
