@@ -135,6 +135,19 @@ class Client(discord.Client):
             or (not payload.emoji.is_custom_emoji() and payload.emoji.name == r.emoji)
         ][0]
         if message_reaction.me:
+            if self.user.id != payload.user_id and message.content.startswith('https://doom.p2r3.com'):
+                await message.remove_reaction(payload.emoji, payload.member)
+                actions = {
+                    '⬆️': 'w',
+                    '⬇️': 's',
+                    '⬅️': 'a',
+                    '➡️': 'd',
+                    '🚪': 'e',
+                    '🔫': 'q',
+                }
+                if payload.emoji.name in actions:
+                    action = actions[payload.emoji.name]
+                    await message.edit(content=message.content.replace('i', f'{action}i'))
             return None
         logger.debug('somebody reacted: %s reaction_count: %s', payload.emoji, message_reaction.count)
         if message_reaction.count >= 3:

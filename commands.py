@@ -862,3 +862,15 @@ async def _d20(context: MessageContext, client: discord.Client) -> MessageContex
 ```
 """.format(n1=roll // 10 or ' ', n2=roll % 10),
     )
+
+
+@command(name='doom')
+async def _doom(context: MessageContext, client: discord.Client) -> MessageContext:
+    message = await context.message.channel.send('https://doom.p2r3.com/i.webp')
+    await message.add_reaction('⬆️')
+    await message.add_reaction('⬇️')
+    await message.add_reaction('⬅️')
+    await message.add_reaction('➡️')
+    await message.add_reaction('🚪')
+    await message.add_reaction('🔫')
+    return context
