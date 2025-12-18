@@ -136,7 +136,6 @@ class Client(discord.Client):
         ][0]
         if message_reaction.me:
             if self.user.id != payload.user_id and message.content.startswith('https://doom.p2r3.com'):
-                await message.remove_reaction(payload.emoji, payload.member)
                 actions = {
                     '⬆️': 'w',
                     '⬇️': 's',
