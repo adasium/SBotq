@@ -873,4 +873,5 @@ async def _doom(context: MessageContext, client: discord.Client) -> MessageConte
     await message.add_reaction('➡️')
     await message.add_reaction('🚪')
     await message.add_reaction('🔫')
+    await message.add_reaction('🔄')
     return context
